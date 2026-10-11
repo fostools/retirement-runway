@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Retirement Runway</title>
+<meta name="description" content="Free retirement runway calculator for couples: see how long savings last through the bridge years to 59½ and retirement, with pre-65 healthcare, Social Security and Roth conversion tax planning. Runs entirely in your browser.">
+<meta property="og:title" content="Retirement Runway">
+<meta property="og:description" content="How long do your savings last? Bridge years, retirement years, healthcare and Roth conversions from a few summary numbers.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#1f5f8b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f5f8b'/%3E%3Cpath d='M6 24h20M8 24V15M14 24V10M20 24V13M26 24V7' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>html{color-scheme:light}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<style>
+/* Layout: inputs rail on the left, results column on the right (summary → timeline → flows → detail); stacks on phones */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --ink:#15212b; --muted:#5b6973; --line:#d9e0e4; --field:#eef2f4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6;
+  --good:#2e7d4f; --warn:#b26a00; --bad:#b3362c;
+  --c-cash:#8a9aa6; --c-brk:#2f6fa8; --c-trad:#d08a2c; --c-roth:#3d9a6a; --c-ss:#7b5ea7; --c-pen:#a35d7a; --c-hc:#2a9d9f; --c-tax:#b75a4a; --c-short:#c83c3c;
+  --f-display:"Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Public Sans", "Segoe UI", Arial, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --surface:#16212a; --ink:#e6edf1; --muted:#9aabb6; --line:#2a3943; --field:#1d2a34;
+  --accent:#6fb0de; --accent-soft:#1c3446; --good:#5cc08a; --warn:#e3a34a; --bad:#ef7a6f;
+  --c-cash:#9fb0bc; --c-brk:#5c9ad3; --c-trad:#e3a250; --c-roth:#5fbf8b; --c-ss:#a68ad1; --c-pen:#cf89a6; --c-hc:#4cc3c4; --c-tax:#de8a78; --c-short:#ef6a6a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --surface:#16212a; --ink:#e6edf1; --muted:#9aabb6; --line:#2a3943; --field:#1d2a34;
+  --accent:#6fb0de; --accent-soft:#1c3446; --good:#5cc08a; --warn:#e3a34a; --bad:#ef7a6f;
+  --c-cash:#9fb0bc; --c-brk:#5c9ad3; --c-trad:#e3a250; --c-roth:#5fbf8b; --c-ss:#a68ad1; --c-pen:#cf89a6; --c-hc:#4cc3c4; --c-tax:#de8a78; --c-short:#ef6a6a;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:20px;padding-block:24px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:20px}
+.head-text{display:flex;flex-direction:column;gap:4px;min-width:0}
+.export{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.export .note{font-size:.8rem;color:var(--muted)}
+button.primary{color:var(--surface);background:var(--accent)}
+h1{font-family:var(--f-display);font-weight:700;font-size:1.9rem;letter-spacing:-.01em;margin:0}
+header p{margin:0;color:var(--muted);max-width:60ch}
+.layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
+aside{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:18px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside{position:static}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font-family:var(--f-display);font-weight:600;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding:0}
+.full{grid-column:1 / -1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);min-width:0}
+input[type=number]{font:inherit;font-family:var(--f-mono);font-size:.92rem;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:7px 9px;width:100%;font-variant-numeric:tabular-nums}
+input[type=number]:focus-visible,input[type=range]:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.check{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+details.adv summary{cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+details.adv[open] summary{margin-bottom:10px}
+.example{font-size:.8rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-size:.82rem;font-weight:600;color:var(--accent);background:var(--accent-soft);border:0;border-radius:7px;padding:6px 12px;cursor:pointer}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi .lbl{font-size:.8rem;color:var(--muted)}
+.kpi .val{font-family:var(--f-display);font-weight:700;font-size:1.6rem;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:.8rem;color:var(--muted)}
+.pill{align-self:flex-start;font-size:.72rem;font-weight:600;letter-spacing:.03em;border-radius:999px;padding:2px 9px}
+.pill.good{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.pill.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.pill.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card h2{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0 0 2px}
+.card .note{margin:0 0 10px;color:var(--muted);font-size:.85rem}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:1100px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.chart{width:100%;height:300px}
+.chart.tall{height:340px}
+.flags{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.flags li{font-size:.88rem;padding:8px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn)}
+.flags li.bad{border-left-color:var(--bad)}
+.flags li.good{border-left-color:var(--good)}
+/* timeline */
+.tl{position:relative;padding-top:4px}
+.tl-row{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px;align-items:center;margin-bottom:10px}
+.tl-row .name{font-size:.82rem;color:var(--muted)}
+.tl-track{position:relative;height:26px;background:var(--field);border-radius:6px;overflow:hidden}
+.tl-track.thin{height:14px}
+.seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;padding-left:6px;font-size:.75rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden}
+.tl-axis{position:relative;height:18px;margin-left:130px;font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.tl-axis span{position:absolute;transform:translateX(-50%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.78rem;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+/* table */
+details.tbl summary{cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:1.05rem}
+.tbl-tools{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;font-family:var(--f-mono);font-size:.78rem;font-variant-numeric:tabular-nums;min-width:100%}
+th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-body);font-weight:600;color:var(--muted);position:sticky;top:0;background:var(--surface)}
+td:first-child,th:first-child{text-align:left}
+tr.short td{color:var(--bad)}
+tr.pen td{color:var(--warn)}
+.sub-h{font-family:var(--f-display);font-weight:600;font-size:.88rem;margin:18px 0 6px;color:var(--ink)}
+#convCard .kpis{margin-top:4px}
+table.compare{font-family:var(--f-body);font-size:.85rem}
+table.compare td:first-child{color:var(--muted)}
+table.compare td.better{color:var(--good);font-weight:600}
+textarea{width:100%;height:120px;font-family:var(--f-mono);font-size:.75rem;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:7px}
+footer{color:var(--muted);font-size:.8rem;margin-top:8px;max-width:80ch;display:flex;flex-direction:column;gap:8px}
+footer p{margin:0}
+footer .disclaimer{color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="head-text">
+    <h1>Retirement Runway</h1>
+    <p>How long your savings last through the bridge years and retirement, for a couple. All figures in today's dollars.</p>
+  </div>
+  <div class="export" id="exportBar">
+    <button type="button" id="dlReport" class="primary">Download report</button>
+    <button type="button" id="dlCsv">Download CSV</button>
+    <button type="button" id="copyLink">Copy scenario link</button>
+    <span class="note" id="exportMsg" role="status"></span>
+  </div>
+</header>
+
+<div class="layout">
+<aside>
+  <div class="example"><span id="exNote">Showing example numbers. Replace with yours.</span><button type="button" id="resetBtn">Reset to example</button></div>
+  <fieldset>
+    <legend>Household</legend>
+    <label>Spouse 1 age<input type="number" id="a1" min="30" max="80" step="1"></label>
+    <label>Spouse 2 age<input type="number" id="a2" min="30" max="80" step="1"></label>
+    <label>Spouse 1 retires at<input type="number" id="retAge" min="30" max="80" step="1"></label>
+    <label>Spouse 2 retires at<input type="number" id="retAge2" min="30" max="80" step="1"></label>
+  </fieldset>
+  <fieldset>
+    <legend>Take-home pay until retiring (monthly)</legend>
+    <label>Spouse 1<input type="number" id="pay1" min="0" step="500"></label>
+    <label>Spouse 2<input type="number" id="pay2" min="0" step="500"></label>
+  </fieldset>
+  <fieldset>
+    <legend>Spending</legend>
+    <label class="full">Monthly expenses, excl. pre-65 healthcare<input type="number" id="monthly" min="0" step="500"></label>
+    <input class="full" type="range" id="monthlyRange" min="5000" max="40000" step="500" aria-label="Monthly expenses slider">
+    <label class="full">Pre-65 healthcare, per person per month<input type="number" id="hc" min="0" step="100"></label>
+  </fieldset>
+  <fieldset>
+    <legend>Savings</legend>
+    <label>Brokerage<input type="number" id="brk" min="0" step="10000"></label>
+    <label>Traditional 401k / IRA<input type="number" id="trad" min="0" step="10000"></label>
+    <label>Roth<input type="number" id="roth" min="0" step="10000"></label>
+    <label>Cash<input type="number" id="cash" min="0" step="5000"></label>
+  </fieldset>
+  <fieldset>
+    <legend>Social Security (monthly)</legend>
+    <label>Spouse 1 amount<input type="number" id="ss1" min="0" step="100"></label>
+    <label>Start age<input type="number" id="ss1Age" min="62" max="70" step="1"></label>
+    <label>Spouse 2 amount<input type="number" id="ss2" min="0" step="100"></label>
+    <label>Start age<input type="number" id="ss2Age" min="62" max="70" step="1"></label>
+  </fieldset>
+  <fieldset>
+    <legend>Roth conversions</legend>
+    <label class="full check"><input type="checkbox" id="convOn"> Convert yearly to reach a Roth target</label>
+    <label class="full">Target Roth balance<input type="number" id="convTarget" min="0" step="50000"></label>
+    <label>Start at Spouse 1 age<input type="number" id="convStart" min="30" max="80" step="1"></label>
+    <label>Reach by Spouse 1 age<input type="number" id="convBy" min="30" max="80" step="0.5"></label>
+    <label class="full">Taxable wages while a spouse still works, $/yr<input type="number" id="convOther" min="0" step="5000"></label>
+    <label class="full">State tax on conversions %<input type="number" id="stateTax" min="0" max="15" step="0.5"></label>
+  </fieldset>
+  <details class="adv">
+    <summary>Advanced assumptions</summary>
+    <fieldset>
+      <label>Return after inflation %<input type="number" id="ret" min="-2" max="10" step="0.5"></label>
+      <label>Inflation %<input type="number" id="infl" min="0" max="8" step="0.5"></label>
+      <label>Tax on traditional %<input type="number" id="tEff" min="0" max="50" step="1"></label>
+      <label>Tax on brokerage gains %<input type="number" id="tGain" min="0" max="40" step="1"></label>
+      <label>Brokerage cost basis %<input type="number" id="basis" min="0" max="100" step="5"></label>
+      <label>Roth contributions $<input type="number" id="rothBasis" min="0" step="5000"></label>
+      <label>Pension, monthly<input type="number" id="pen" min="0" step="100"></label>
+      <label>Pension start age<input type="number" id="penAge" min="40" max="80" step="1"></label>
+      <label class="full">Plan to age (younger spouse)<input type="number" id="plan" min="70" max="105" step="1"></label>
+      <label class="full check"><input type="checkbox" id="rule55"> Rule of 55 (Spouse 1 leaves employer at 55+)</label>
+    </fieldset>
+  </details>
+</aside>
+
+<main>
+  <section class="kpis" aria-label="Headline results">
+    <div class="kpi"><span class="lbl">Bridge years covered</span><span class="val" id="kBridge">–</span><span class="pill" id="kBridgePill"></span><span class="sub" id="kBridgeSub"></span></div>
+    <div class="kpi"><span class="lbl">Retirement runway</span><span class="val" id="kRet">–</span><span class="sub" id="kRetSub"></span></div>
+    <div class="kpi"><span class="lbl">Money lasts to age</span><span class="val" id="kLasts">–</span><span class="pill" id="kLastsPill"></span><span class="sub">Spouse 1 / Spouse 2</span></div>
+    <div class="kpi"><span class="lbl">Spending that lasts to plan age</span><span class="val" id="kSafe">–</span><span class="sub" id="kSafeSub"></span></div>
+  </section>
+
+  <ul class="flags" id="flags"></ul>
+
+  <section class="card">
+    <h2>Runway timeline</h2>
+    <p class="note">By Spouse 1's age. The bridge ends when penalty-free access to retirement accounts begins.</p>
+    <div class="tl" id="timeline"></div>
+  </section>
+
+  <section class="card" id="convCard">
+    <h2>Roth conversion plan</h2>
+    <p class="note" id="convNote"></p>
+    <div id="convBody">
+      <div class="kpis">
+        <div class="kpi"><span class="lbl">Convert each year</span><span class="val" id="cAmt">–</span><span class="sub" id="cAmtSub"></span></div>
+        <div class="kpi"><span class="lbl">Tax on conversions</span><span class="val" id="cTax">–</span><span class="sub" id="cTaxSub"></span></div>
+        <div class="kpi"><span class="lbl">Top federal bracket hit</span><span class="val" id="cTop">–</span><span class="sub" id="cTopSub"></span></div>
+        <div class="kpi"><span class="lbl">Roth at target age</span><span class="val" id="cRoth">–</span><span class="pill" id="cRothPill"></span></div>
+      </div>
+      <h3 class="sub-h">Each year's conversion, by federal tax bracket</h3>
+      <div class="chart" id="chConv"></div>
+      <h3 class="sub-h">With and without conversions</h3>
+      <div class="tbl-wrap"><table id="convCompare" class="compare"></table></div>
+      <h3 class="sub-h">Tax implications</h3>
+      <ul class="flags" id="convImpl"></ul>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Balances by bucket</h2>
+      <p class="note">End-of-year balances, stacked, by Spouse 1's age.</p>
+      <div class="chart" id="chBalances"></div>
+    </section>
+    <section class="card">
+      <h2>Money in by year</h2>
+      <p class="note">Where each year's money comes from, against the total cost (living, healthcare, tax).</p>
+      <div class="chart" id="chFlow"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Where the money goes</h2>
+    <p class="note">Lifetime totals from each source into living costs, healthcare, taxes, and what is left at the plan age.</p>
+    <div class="chart tall" id="chSankey"></div>
+  </section>
+
+  <section class="card">
+    <h2>What if spending changes?</h2>
+    <p class="note">Age money runs out (Spouse 1) at different monthly spending. Drag the spending slider to move the marker.</p>
+    <div class="chart" id="chSens"></div>
+  </section>
+
+  <section class="card">
+    <details class="tbl">
+      <summary>Year-by-year table</summary>
+      <div class="tbl-tools"><button type="button" id="copyCsv">Copy as CSV</button><span class="note" id="copyMsg"></span></div>
+      <textarea id="csvBox" hidden readonly aria-label="CSV text"></textarea>
+      <div class="tbl-wrap"><table id="tbl"></table></div>
+    </details>
+  </section>
+
+  <footer><p class="disclaimer"><strong>Disclaimer.</strong> Retirement Runway is an educational calculator, not financial, investment, tax or legal advice, and it does not recommend any specific security, product or insurance policy. Its results are estimates that depend entirely on the numbers and assumptions you enter; actual returns, inflation, tax law, healthcare costs and benefits will differ, and past or assumed returns do not guarantee future results. Tax figures use simplified rules and 2026 federal brackets and may not reflect your situation. Your inputs stay in your browser and are not sent to any server; this site has no accounts, analytics or cookies. A scenario link contains the numbers you entered, so share it only with people you trust. Before acting on these results, talk to a qualified financial planner, tax professional or attorney.</p><p><strong>How it calculates.</strong> Spending starts now and is offset by each spouse's take-home pay until they retire. Pre-65 healthcare starts when both have retired (assumes the working spouse's employer plan covers both until then). Flat effective tax rates; 85% of Social Security treated as taxable; withdrawals each half-year in the order cash, brokerage, Roth contributions (before access), traditional, then Roth. Before access, traditional and Roth earnings carry a 10% penalty. Income above spending is reinvested in the brokerage account.</p></footer>
+</main>
+</div>
+</div>
+
+<script>
+const EXAMPLE = {a1:52,a2:50,retAge:52,retAge2:55,pay1:0,pay2:8000,monthly:20000,hc:1500,brk:2000000,trad:2500000,roth:400000,cash:0,
+  ss1:0,ss1Age:67,ss2:0,ss2Age:67,ret:4,infl:2.5,tEff:20,tGain:15,basis:50,rothBasis:0,pen:0,penAge:65,plan:95,rule55:false,
+  convOn:true,convTarget:1000000,convStart:52,convBy:59.5,convOther:130000,stateTax:0};
+// 2026 federal brackets, married filing jointly (IRS), held constant in today's dollars
+const STD=32200, BANDS=[0,24800,100800,211400,403550,512450,768700,Infinity], RATES=[.10,.12,.22,.24,.32,.35,.37];
+const EDGES=[0,STD,...BANDS.slice(1).map(b=>b+STD)], BAND_RATES=[0,...RATES];
+function fedTax(gross){ const ti=Math.max(0,gross-STD); let t=0; for(let i=0;i<RATES.length;i++){ const lo=BANDS[i], hi=BANDS[i+1]; if(ti>lo) t+=(Math.min(ti,hi)-lo)*RATES[i]; } return t; }
+function slices(base, amt){ return BAND_RATES.map((_,i)=>{ const lo=EDGES[i], hi=EDGES[i+1]; return Math.max(0, Math.min(base+amt,hi)-Math.max(base,lo)); }); }
+const KEYS = Object.keys(EXAMPLE);
+const $ = id => document.getElementById(id);
+let P = {...EXAMPLE};
+try { const s = JSON.parse(localStorage.getItem('runway-inputs')||'null'); if (s) P = {...EXAMPLE, ...s}; } catch(e){}
+function readHash(){ try{ const h=location.hash.slice(1); if(!h) return false; const q=new URLSearchParams(h); let any=false;
+  q.forEach((v,k)=>{ if(k in EXAMPLE){ any=true; P[k] = typeof EXAMPLE[k]==='boolean' ? v==='1' : parseFloat(v); } }); return any; }catch(e){ return false; } }
+readHash();
+function scenarioLink(){ const q=new URLSearchParams(); KEYS.forEach(k=>{ if(P[k]!==EXAMPLE[k]) q.set(k, typeof P[k]==='boolean' ? (P[k]?'1':'0') : String(P[k])); });
+  const s=q.toString(); return location.origin + location.pathname + (s?'#'+s:''); }
+
+function fillForm(){ KEYS.forEach(k=>{ const el=$(k); if(!el) return; if(el.type==='checkbox') el.checked=!!P[k]; else el.value=P[k]; }); $('monthlyRange').value=P.monthly; }
+function readForm(){ KEYS.forEach(k=>{ const el=$(k); if(!el) return; if(el.type==='checkbox') P[k]=el.checked; else { const v=parseFloat(el.value); P[k]=isNaN(v)?0:v; } }); }
+
+const money = v => '$' + Math.round(v).toLocaleString('en-US');
+const short$ = v => { const a=Math.abs(v); return (v<0?'-':'')+(a>=1e6?'$'+(a/1e6).toFixed(a>=1e7?1:2)+'M':a>=1e3?'$'+Math.round(a/1e3)+'K':'$'+Math.round(a)); };
+const age = a => { const w=Math.floor(a+1e-9); return (a-w>0.25)? w+'½' : String(w); };
+
+function simulate(p, monthly){
+  const m = monthly ?? p.monthly, step = 0.5, g = Math.pow(1+p.ret/100, step);
+  const tE = p.tEff/100, gB = 1 - (1-p.basis/100)*p.tGain/100;
+  const r1 = Math.max(p.retAge, p.a1), r2 = Math.max(p.retAge2, p.a2);
+  const r2s1 = p.a1 + (r2 - p.a2);                 // Spouse 2's retirement, in Spouse 1's age
+  const firstRet = Math.min(r1, r2s1), lastRet = Math.max(r1, r2s1);
+  const retAge = firstRet;
+  const access = (p.rule55 && r1>=55) ? Math.min(r1,59.5) : 59.5;
+  const young = Math.min(p.a1,p.a2), T = Math.max(0, p.plan - young);
+  let cash=p.cash, brk=p.brk, trad=p.trad, roth=p.roth, rb=Math.min(p.rothBasis,p.roth);
+  const C = p.convOn ? (p._C||0) : 0, cStart = Math.max(p.convStart, p.a1);
+  let rothAt = null;
+  const per=[];
+  for(let t=0; t<T-1e-9; t+=step){
+    const x1=p.a1+t, x2=p.a2+t, r={t,x1,x2,retired:x1>=retAge-1e-9,living:0,hc:0,ss:0,pen:0,pay:0,
+      w:{cash:0,brk:0,trad:0,roth:0}, net:{cash:0,brk:0,trad:0,roth:0,ss:0,pen:0,pay:0}, tax:{cash:0,brk:0,trad:0,roth:0,ss:0,pen:0,pay:0}, short:0, penalty:false, bridge:false, conv:0, convTax:0, convFed:0, convBase:0, slices:null};
+    {
+      r.bridge = r.retired && x1 < access-1e-9;
+      r.living = m*12*step;
+      r.hc = x1 >= lastRet-1e-9 ? p.hc*12*step*((x1<65)+(x2<65)) : 0;
+      const payN = ((x1<r1-1e-9?p.pay1:0)+(x2<r2-1e-9?p.pay2:0))*12*step;
+      const ssG = ((x1>=p.ss1Age?p.ss1:0)+(x2>=p.ss2Age?p.ss2:0))*12*step, ssN = ssG*(1-0.85*tE);
+      const pnG = (x1>=p.penAge?p.pen:0)*12*step, pnN = pnG*(1-tE);
+      r.ss=ssG; r.pen=pnG; r.pay=payN;
+      if(C>0 && x1>=cStart-1e-9 && x1<p.convBy-1e-9 && trad>1){
+        const amt=Math.min(C*step, trad); trad-=amt; roth+=amt;
+        const base = (payN>0 ? p.convOther : 0) + (0.85*ssG + pnG)/step, annual = amt/step;   // annual figures for brackets
+        r.conv=amt; r.convBase=base;
+        r.convFed=(fedTax(base+annual)-fedTax(base))*step;
+        r.convTax=r.convFed + amt*p.stateTax/100;
+        r.slices=slices(base, annual).map(v=>v*step);
+      }
+      const cost = r.living + r.hc + r.convTax;
+      const inc = payN+ssN+pnN, use = Math.min(inc,cost), f = inc>0? use/inc : 0;
+      r.net.pay = payN*f; r.net.ss = ssN*f; r.net.pen = pnN*f; r.tax.ss = ssG-ssN; r.tax.pen = pnG-pnN;
+      if(inc>cost) brk += inc-cost;
+      let need = cost - use, w;
+      const take = (bal, gross) => Math.min(bal, gross);
+      w=take(cash,need); cash-=w; r.w.cash+=w; r.net.cash+=w; need-=w;
+      if(need>0.5){ w=take(brk,need/gB); brk-=w; r.w.brk+=w; r.net.brk+=w*gB; r.tax.brk+=w*(1-gB); need-=w*gB; }
+      if(x1 < access-1e-9){
+        if(need>0.5){ w=Math.min(rb,roth,need); roth-=w; rb-=w; r.w.roth+=w; r.net.roth+=w; need-=w; }
+        if(need>0.5){ const gt=1-tE-0.10; w=take(trad,need/gt); trad-=w; r.w.trad+=w; r.net.trad+=w*gt; r.tax.trad+=w*(tE+0.10); need-=w*gt; if(w>0.5) r.penalty=true; }
+        if(need>0.5){ w=take(roth,need/0.9); roth-=w; r.w.roth+=w; r.net.roth+=w*0.9; r.tax.roth+=w*0.1; need-=w*0.9; if(w>0.5) r.penalty=true; }
+      } else {
+        if(need>0.5){ const gt=1-tE; w=take(trad,need/gt); trad-=w; r.w.trad+=w; r.net.trad+=w*gt; r.tax.trad+=w*tE; need-=w*gt; }
+        if(need>0.5){ w=take(roth,need); roth-=w; r.w.roth+=w; r.net.roth+=w; need-=w; }
+      }
+      r.short = need>0.5? need : 0;
+    }
+    brk*=g; trad*=g; roth*=g;
+    if(rothAt===null && x1+step >= p.convBy-1e-9) rothAt=roth;
+    r.bal={cash,brk,trad,roth};
+    per.push(r);
+  }
+  const bridgeNeed = Math.max(0, access - retAge);
+  let bridgeClean=0, bridgePen=false, bridgeShort=false;
+  per.forEach(r=>{ if(r.retired && r.bridge){ if(r.short>0) bridgeShort=true; else if(r.penalty) bridgePen=true; else bridgeClean+=step; } });
+  const dep = per.find(r=>r.short>0);
+  const accessStart = Math.max(access, retAge);
+  const endX1 = p.a1+T, endX2 = p.a2+T;
+  const retRunway = dep ? Math.max(0, dep.x1 - accessStart) : Math.max(0, endX1 - accessStart);
+  const convTotal = per.reduce((a,r)=>a+r.conv,0), convTaxTotal = per.reduce((a,r)=>a+r.convTax,0), convFedTotal = per.reduce((a,r)=>a+r.convFed,0);
+  const taxTotal = per.reduce((a,r)=>a+Object.values(r.tax).reduce((x,y)=>x+y,0)+r.convTax,0);
+  return {rothAt: rothAt ?? roth, convTotal, convTaxTotal, convFedTotal, taxTotal, per, access, retAge, r1, r2s1, firstRet, lastRet, bridgeNeed, bridgeClean, bridgePen, bridgeShort, dep, retRunway, endX1, endX2, end:{cash,brk,trad,roth}};
+}
+
+function solveConversion(p){
+  if(!p.convOn) return {C:0, reachable:true};
+  const s0=Math.max(p.convStart,p.a1);
+  if(p.convBy - s0 <= 0) return {C:0, reachable:false, noWindow:true};
+  const at = c => simulate({...p,_C:c}).rothAt;
+  if(at(0) >= p.convTarget) return {C:0, reachable:true, already:true};
+  let lo=0, hi=Math.max(p.trad,1);
+  if(at(hi) < p.convTarget) return {C:hi, reachable:false};
+  for(let i=0;i<34;i++){ const mid=(lo+hi)/2; if(at(mid)>=p.convTarget) hi=mid; else lo=mid; }
+  return {C:Math.ceil(hi/100)*100, reachable:true};
+}
+
+function sustainable(p){
+  let lo=0, hi=Math.max(60000, p.monthly*3);
+  for(let i=0;i<40;i++){ const mid=(lo+hi)/2; if(simulate(p,mid).dep) hi=mid; else lo=mid; }
+  return Math.floor(lo/100)*100;
+}
+
+function yearly(sim, p){
+  const rows=new Map();
+  sim.per.forEach(r=>{
+    const k=Math.floor(r.t+1e-9);
+    if(!rows.has(k)) rows.set(k,{a1:p.a1+k,a2:p.a2+k,living:0,hc:0,ss:0,pen:0,pay:0,cash:0,brk:0,trad:0,roth:0,tax:0,short:0,penalty:false,retired:false});
+    const y=rows.get(k);
+    y.living+=r.living; y.hc+=r.hc; y.ss+=r.ss; y.pen+=r.pen; y.pay+=r.pay; y.cash+=r.w.cash; y.brk+=r.w.brk; y.trad+=r.w.trad; y.roth+=r.w.roth;
+    y.tax+=Object.values(r.tax).reduce((a,b)=>a+b,0)+r.convTax; y.short+=r.short;
+    y.conv=(y.conv||0)+r.conv; y.convTax=(y.convTax||0)+r.convTax;
+    if(r.slices){ y.slices=y.slices||BAND_RATES.map(()=>0); r.slices.forEach((v,i)=>y.slices[i]+=v); } y.penalty=y.penalty||r.penalty; y.retired=y.retired||r.retired; y.bal=r.bal;
+  });
+  return [...rows.values()];
+}
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const charts = {};
+function chart(id){ if(!charts[id]) charts[id]=echarts.init($(id),null,{renderer:'svg'}); return charts[id]; }
+function baseText(){ return {color:css('--muted'), fontFamily:'Public Sans, Arial, sans-serif', fontSize:11}; }
+function axisCommon(){ return {axisLine:{lineStyle:{color:css('--line')}}, axisTick:{show:false}, axisLabel:{color:css('--muted'),fontSize:11}, splitLine:{lineStyle:{color:css('--line'),opacity:.6}}}; }
+function tooltip(){ return {trigger:'axis', backgroundColor:css('--surface'), borderColor:css('--line'), textStyle:{color:css('--ink'),fontSize:12}, valueFormatter:v=>money(v)}; }
+
+function render(){
+  readForm();
+  try{ localStorage.setItem('runway-inputs', JSON.stringify(P)); }catch(e){}
+  const isEx = KEYS.every(k=>P[k]===EXAMPLE[k]);
+  $('exNote').textContent = isEx ? 'Showing example numbers. Replace with yours.' : 'Your numbers (saved in this browser).';
+  const sol = solveConversion(P); P._C = sol.C;
+  const sim = simulate(P), ys = yearly(sim,P), safe = sustainable(P);
+
+  // KPIs
+  const pill=(el,cls,txt)=>{ el.className='pill '+cls; el.textContent=txt; el.hidden=!txt; };
+  if(sim.bridgeNeed<=0){ $('kBridge').textContent='None'; pill($('kBridgePill'),'good','No bridge needed'); $('kBridgeSub').textContent='Retiring at or after access age'; }
+  else {
+    $('kBridge').textContent = `${age(sim.bridgeClean)} of ${age(sim.bridgeNeed)} yrs`;
+    if(sim.bridgeShort) pill($('kBridgePill'),'bad','Short');
+    else if(sim.bridgePen) pill($('kBridgePill'),'warn','Needs penalty withdrawals');
+    else pill($('kBridgePill'),'good','Covered');
+    $('kBridgeSub').textContent = `Spouse 1 ages ${age(sim.retAge)} to ${age(sim.access)}`;
+  }
+  $('kRet').textContent = `${age(sim.retRunway)} yrs`;
+  $('kRetSub').textContent = `From Spouse 1 age ${age(Math.max(sim.access,sim.retAge))}`;
+  if(sim.dep){ $('kLasts').textContent = `${age(sim.dep.x1)} / ${age(sim.dep.x2)}`; pill($('kLastsPill'),'bad','Runs out before plan age'); }
+  else { $('kLasts').textContent = `Past ${age(sim.endX1)} / ${age(sim.endX2)}`; pill($('kLastsPill'),'good',`${short$(sim.end.cash+sim.end.brk+sim.end.trad+sim.end.roth)} left`); }
+  $('kSafe').textContent = money(safe)+'/mo';
+  $('kSafeSub').textContent = safe>=P.monthly ? `${money(safe-P.monthly)} above today's plan` : `${money(P.monthly-safe)} below today's plan`;
+
+  // flags
+  const flags=[];
+  if(sim.bridgeShort) flags.push(['bad','The bridge years are not fully funded, even with penalty withdrawals.']);
+  else if(sim.bridgePen) flags.push(['warn','Brokerage and Roth contributions run out before 59½, so some bridge years draw from retirement accounts with a 10% penalty.']);
+  else if(sim.bridgeNeed>0){ const atAccess = sim.per.find(r=>r.x1>=sim.access-1e-9); const left = atAccess? atAccess.bal.brk+atAccess.bal.cash : 0;
+    flags.push([left < 12*P.monthly ? 'warn':'good', `Bridge covered by brokerage${P.rothBasis>0?', cash and Roth contributions':' and cash'}, with ${short$(left)} left at ${age(sim.access)}${left < 12*P.monthly ? ', less than a year of spending as a cushion':''}.`]); }
+  if(sim.dep) flags.push(['bad', `Money runs out at Spouse 1 age ${age(sim.dep.x1)}. Spending of ${money(safe)}/mo would last to the plan age.`]);
+  const hcTotal = sim.per.reduce((a,r)=>a+r.hc,0);
+  if(hcTotal>0) flags.push(['warn', `Pre-65 healthcare totals ${short$(hcTotal)}, from when both have retired until each turns 65.`]);
+  const payTotal = sim.per.reduce((a,r)=>a+r.net.pay,0);
+  if(payTotal>0) flags.push(['good', `Take-home pay covers ${short$(payTotal)} of spending before the last spouse retires at Spouse 1 age ${age(sim.lastRet)}.`]);
+  if(P.trad > 1.5*(P.brk+P.roth) && sim.bridgeNeed>0) flags.push(['warn','Traditional balance is large relative to other buckets; Roth conversions in low-income bridge years could lower lifetime tax.']);
+  if(P.ss1===0 && P.ss2===0) flags.push(['warn','No Social Security entered. Add estimates from ssa.gov to see their effect.']);
+  $('flags').innerHTML = flags.map(([c,t])=>`<li class="${c}">${t}</li>`).join('');
+
+  renderTimeline(sim);
+  renderConv(sim, ys, sol, safe);
+  renderBalances(ys, sim);
+  renderFlow(ys);
+  renderSankey(sim);
+  renderSens(safe);
+  renderTable(ys);
+}
+
+function renderTimeline(sim){
+  const a0=P.a1, a9=sim.endX1, span=a9-a0, X=a=>Math.max(0,Math.min(100,(a-a0)/span*100));
+  const seg=(s,e,color,label,dashed)=> e>s ? `<div class="seg" style="left:${X(s)}%;width:${X(e)-X(s)}%;background:${dashed?'transparent':`color-mix(in srgb, ${color} 32%, transparent)`};${dashed?`border:1px dashed ${color};`:`border-left:2px solid ${color};`}">${label}</div>` : '';
+  const depAt = sim.dep ? sim.dep.x1 : a9;
+  const accessStart = Math.max(sim.access, sim.retAge);
+  const w1 = seg(a0, sim.r1, css('--c-pen'), 'Working');
+  const w2 = seg(a0, sim.r2s1, css('--c-pen'), 'Working');
+  let main = seg(sim.retAge, Math.min(accessStart,depAt), css('--c-brk'), 'Bridge');
+  main += seg(accessStart, depAt, css('--c-roth'), 'Retirement');
+  if(sim.dep) main += seg(depAt, a9, css('--c-short'), `Runs out at ${age(depAt)}`, true);
+  const hcEnd1 = Math.max(sim.lastRet, 65), hcEnd2 = Math.max(sim.lastRet, P.a1 + (65 - P.a2));
+  const hc1 = seg(sim.lastRet, Math.min(hcEnd1,a9), css('--c-hc'), '');
+  const hc2 = seg(sim.lastRet, Math.min(hcEnd2,a9), css('--c-hc'), '');
+  const ticks=[]; for(let a=Math.ceil(a0/5)*5; a<=a9; a+=5) ticks.push(a);
+  if(!ticks.includes(a0)) ticks.unshift(a0);
+  $('timeline').innerHTML = `
+   <div class="tl-row"><span class="name">Spouse 1 working</span><div class="tl-track thin">${w1}</div></div>
+   <div class="tl-row"><span class="name">Spouse 2 working</span><div class="tl-track thin">${w2}</div></div>
+   <div class="tl-row"><span class="name">Savings</span><div class="tl-track">${main}</div></div>
+   <div class="tl-row"><span class="name">Healthcare, Spouse 1</span><div class="tl-track thin">${hc1}</div></div>
+   <div class="tl-row"><span class="name">Healthcare, Spouse 2</span><div class="tl-track thin">${hc2}</div></div>
+   <div class="tl-axis">${ticks.map(a=>`<span style="left:${X(a)}%">${a}</span>`).join('')}</div>
+   <div class="legend"><span><i style="background:${css('--c-brk')}"></i>Bridge: brokerage, cash, Roth contributions</span><span><i style="background:${css('--c-roth')}"></i>Retirement: all accounts</span><span><i style="background:${css('--c-pen')}"></i>Working, take-home pay</span><span><i style="background:${css('--c-hc')}"></i>Pre-65 healthcare, after both retire</span><span>Access age ${age(sim.access)}</span></div>`;
+}
+
+function renderConv(sim, ys, sol, safe){
+  const on = P.convOn, body=$('convBody');
+  if(!on){ $('convNote').textContent='Turn on Roth conversions in the inputs to plan a yearly conversion toward a Roth target.'; body.hidden=true; return; }
+  body.hidden=false;
+  const s0=Math.max(P.convStart,P.a1), yrs=Math.max(0,P.convBy-s0);
+  if(sol.noWindow){ $('convNote').textContent='The start age is at or after the target age, so there are no conversion years. Move the start earlier or the target later.'; body.hidden=true; return; }
+  $('convNote').textContent = sol.already
+    ? `Your Roth reaches ${short$(P.convTarget)} by Spouse 1 age ${age(P.convBy)} from growth alone; no conversions needed.`
+    : `To grow the Roth from ${short$(P.roth)} to ${short$(P.convTarget)} by Spouse 1 age ${age(P.convBy)}, convert the same amount from traditional each year from age ${age(s0)}: ${age(yrs)} years. Tax is paid from brokerage, not from the conversion. Federal brackets are 2026, married filing jointly, in today's dollars.`;
+  const pill=(el,cls,txt)=>{ el.className='pill '+cls; el.textContent=txt; el.hidden=!txt; };
+  $('cAmt').textContent = money(sol.C)+'/yr';
+  $('cAmtSub').textContent = `${short$(sim.convTotal)} total, ages ${age(s0)} to ${age(P.convBy)}`;
+  const eff = sim.convTotal>0 ? sim.convTaxTotal/sim.convTotal*100 : 0;
+  $('cTax').textContent = short$(sim.convTaxTotal);
+  $('cTaxSub').textContent = sim.convTotal>0 ? `${eff.toFixed(1)}% of the amount converted${P.stateTax>0?', incl. state':''}` : 'No conversions';
+  const sl = BAND_RATES.map((_,i)=>ys.reduce((a,y)=>a+(y.slices?y.slices[i]:0),0));
+  let top=-1; sl.forEach((v,i)=>{ if(v>1) top=i; });
+  $('cTop').textContent = top<0 ? '–' : (BAND_RATES[top]*100).toFixed(0)+'%';
+  $('cTopSub').textContent = top<0 ? '' : top===0 ? 'Covered by the standard deduction' : `${short$(sl[top])} of the total taxed at this rate`;
+  $('cRoth').textContent = short$(sim.rothAt);
+  if(sol.reachable) pill($('cRothPill'),'good','Target reached'); else pill($('cRothPill'),'bad','Target out of reach');
+
+  // chart: conversion split by bracket, tax line
+  const cy = ys.filter(y=>y.conv>0), x=cy.map(y=>String(y.a1)), base=css('--c-tax');
+  const series = BAND_RATES.map((rt,i)=>({name: i===0?'0% (std. deduction)':`${(rt*100).toFixed(0)}%`, type:'bar', stack:'c', barCategoryGap:'30%',
+    itemStyle:{color: i===0? css('--c-cash') : base, opacity: i===0? .7 : .25+ i*.11}, data: cy.map(y=>Math.round(y.slices?y.slices[i]:0))}))
+    .filter(s=>s.data.some(v=>v>0));
+  series.push({name:'Tax owed', type:'line', symbol:'circle', symbolSize:5, color:css('--ink'), data: cy.map(y=>Math.round(y.convTax))});
+  chart('chConv').setOption({textStyle:baseText(), grid:{left:56,right:16,top:40,bottom:30}, legend:{top:0,textStyle:{color:css('--muted')},itemWidth:12,itemHeight:8},
+    tooltip:tooltip(), xAxis:{type:'category',data:x,...axisCommon(),splitLine:{show:false}},
+    yAxis:{type:'value',...axisCommon(),axisLabel:{color:css('--muted'),fontSize:11,formatter:short$}}, series},true);
+
+  // with vs without
+  const p0={...P,_C:0}, s0im=simulate(p0), safe0=sustainable(p0);
+  const lasts=s=> s.dep ? `${age(s.dep.x1)} / ${age(s.dep.x2)}` : `Past ${age(s.endX1)} / ${age(s.endX2)}`;
+  const lastsN=s=> s.dep ? s.dep.x1 : 999;
+  const afterTax=s=> s.end.cash+s.end.brk+s.end.roth+s.end.trad*(1-P.tEff/100);
+  const bridge=s=> s.bridgeNeed<=0?'None needed': s.bridgeShort?'Short': s.bridgePen?'Needs penalty withdrawals':'Covered';
+  const cushion=s=>{ const a=s.per.find(r=>r.x1>=s.access-1e-9); return a? a.bal.brk+a.bal.cash : 0; };
+  const rows=[
+    ['Money lasts to (Spouse 1 / 2)', lasts(s0im), lasts(sim), lastsN(sim)>lastsN(s0im)?1:lastsN(sim)<lastsN(s0im)?-1:0],
+    ['Spending that lasts to plan age', money(safe0)+'/mo', money(safe)+'/mo', Math.sign(safe-safe0)],
+    ['Lifetime taxes and penalties', short$(s0im.taxTotal), short$(sim.taxTotal), Math.sign(s0im.taxTotal-sim.taxTotal)],
+    ['Left at plan age, after tax', short$(afterTax(s0im)), short$(afterTax(sim)), Math.sign(afterTax(sim)-afterTax(s0im))],
+    [`Brokerage + cash left at ${age(sim.access)}`, short$(cushion(s0im)), short$(cushion(sim)), Math.sign(cushion(sim)-cushion(s0im))],
+    ['Bridge years', bridge(s0im), bridge(sim), 0],
+    [`Roth at age ${age(P.convBy)}`, short$(s0im.rothAt), short$(sim.rothAt), 0]];
+  $('convCompare').innerHTML = `<thead><tr><th></th><th>Without conversions</th><th>With conversions</th></tr></thead><tbody>${
+    rows.map(r=>`<tr><td>${r[0]}</td><td class="${r[3]<0?'better':''}">${r[1]}</td><td class="${r[3]>0?'better':''}">${r[2]}</td></tr>`).join('')}</tbody>`;
+
+  // implications
+  const imp=[];
+  if(!sol.reachable) imp.push(['bad',`Even converting the whole traditional balance doesn't reach ${short$(P.convTarget)} by age ${age(P.convBy)}. Lower the target or extend the date.`]);
+  if(sim.convTotal>0){
+    imp.push([eff<P.tEff?'good':'warn', `Converting costs about ${eff.toFixed(1)}% in tax now. Leaving the money in traditional is assumed to cost ${P.tEff}% when withdrawn later${eff<P.tEff?', so converting is cheaper at these amounts':', so converting at these amounts costs more than waiting'}.`]);
+    const c0=cushion(s0im), c1=cushion(sim);
+    imp.push([c1 < 12*P.monthly ? 'warn':'good', `The tax is paid from brokerage, so the cushion left at ${age(sim.access)} drops from ${short$(c0)} to ${short$(c1)}.`]);
+    const firstAnnual = sim.per.find(r=>r.conv>0);
+    if(firstAnnual){ const room = ['0%','10%','12%','22%','24%','32%','35%','37%'];
+      const ti = firstAnnual.convBase + firstAnnual.conv/0.5; const next = EDGES.find(e=>e>ti);
+      if(isFinite(next)) imp.push(['good', `At ${money(firstAnnual.conv/0.5)}/yr, income reaches the ${room[EDGES.indexOf(next)-1]} bracket; about ${money(next-ti)} more per year fits before the next bracket starts.`]); }
+    const hcYears = sim.per.some(r=>r.conv>0 && r.hc>0);
+    if(hcYears) imp.push(['warn','Conversions count as income for ACA marketplace subsidies. In years you buy your own coverage before 65, expect smaller or no premium help; check current ACA rules before converting.']);
+    if(P.convBy>63 || sim.per.some(r=>r.conv>0 && r.x1>=63)) imp.push(['warn','Conversions at 63 or later raise Medicare premiums two years later (IRMAA) if income crosses the thresholds.']);
+    const working = sim.per.some(r=>r.conv>0 && r.pay>0);
+    if(working && P.convOther===0) imp.push(['bad','A spouse is still working during some conversion years. Add their taxable wages in the Roth conversions inputs, or the brackets shown are too low.']);
+    imp.push(['warn','Each converted amount must stay in the Roth five years before it can be withdrawn penalty-free before 59½.']);
+  }
+  $('convImpl').innerHTML = imp.map(([c,t])=>`<li class="${c}">${t}</li>`).join('');
+}
+
+function marks(sim){
+  const lines=[{x:Math.floor(sim.access), n:'Access '+age(sim.access)}, {x:65, n:'65'}];
+  const s1ss = P.ss1>0? P.ss1Age : null; if(s1ss) lines.push({x:s1ss, n:'SS '+s1ss});
+  return {symbol:'none', silent:true, lineStyle:{color:css('--muted'),type:'dashed',width:1}, label:{color:css('--muted'),fontSize:10,formatter:d=>d.name},
+    data: lines.filter(l=>l.x>P.a1).map(l=>({xAxis:String(l.x), name:l.n}))};
+}
+
+function renderBalances(ys, sim){
+  const x=ys.map(y=>String(y.a1));
+  const s=(name,key,color)=>({name,type:'line',stack:'b',areaStyle:{opacity:.55},symbol:'none',lineStyle:{width:1},color,data:ys.map(y=>Math.round(y.bal[key]))});
+  const series=[s('Brokerage','brk',css('--c-brk')), s('Traditional','trad',css('--c-trad')), s('Roth','roth',css('--c-roth'))];
+  if(P.cash>0) series.unshift(s('Cash','cash',css('--c-cash')));
+  series[series.length-1].markLine = marks(sim);
+  chart('chBalances').setOption({textStyle:baseText(), grid:{left:56,right:16,top:34,bottom:30}, legend:{top:0,textStyle:{color:css('--muted')},itemWidth:12,itemHeight:8},
+    tooltip:tooltip(), xAxis:{type:'category',data:x,boundaryGap:false,...axisCommon(),splitLine:{show:false}},
+    yAxis:{type:'value',...axisCommon(),axisLabel:{color:css('--muted'),fontSize:11,formatter:short$}}, series},true);
+}
+
+function renderFlow(ys){
+  const r=ys, x=r.map(y=>String(y.a1));
+  const b=(name,f,color)=>({name,type:'bar',stack:'f',color,barCategoryGap:'25%',data:r.map(f)});
+  const series=[b('Brokerage',y=>Math.round(y.brk),css('--c-brk')), b('Traditional',y=>Math.round(y.trad),css('--c-trad')), b('Roth',y=>Math.round(y.roth),css('--c-roth'))];
+  if(P.cash>0) series.unshift(b('Cash',y=>Math.round(y.cash),css('--c-cash')));
+  if(ys.some(y=>y.pay>0)) series.unshift(b('Take-home pay',y=>Math.round(y.pay),css('--c-pen')));
+  if(P.ss1+P.ss2>0) series.push(b('Social Security',y=>Math.round(y.ss),css('--c-ss')));
+  if(P.pen>0) series.push(b('Pension',y=>Math.round(y.pen),css('--c-cash')));
+  if(r.some(y=>y.short>0)) series.push(b('Shortfall',y=>Math.round(y.short),css('--c-short')));
+  series.push({name:'Total cost',type:'line',step:'middle',symbol:'none',color:css('--ink'),lineStyle:{width:1.5},data:r.map(y=>Math.round(y.living+y.hc+y.tax))});
+  chart('chFlow').setOption({textStyle:baseText(), grid:{left:56,right:16,top:50,bottom:30}, legend:{top:0,textStyle:{color:css('--muted')},itemWidth:12,itemHeight:8},
+    tooltip:tooltip(), xAxis:{type:'category',data:x,...axisCommon(),splitLine:{show:false}},
+    yAxis:{type:'value',...axisCommon(),axisLabel:{color:css('--muted'),fontSize:11,formatter:short$}}, series},true);
+}
+
+function renderSankey(sim){
+  const src={pay:'Take-home pay',cash:'Cash',brk:'Brokerage',trad:'Traditional',roth:'Roth',ss:'Social Security',pen:'Pension'};
+  const col={pay:'--c-pen',cash:'--c-cash',brk:'--c-brk',trad:'--c-trad',roth:'--c-roth',ss:'--c-ss',pen:'--c-cash'};
+  const L={},H={},X={}; let SL=0, SH=0;
+  sim.per.forEach(r=>{ const tot=r.living+r.hc+r.convTax, lr= tot>0? r.living/tot : 1, hr = tot>0? r.hc/tot : 0, cr = tot>0? r.convTax/tot : 0;
+    Object.keys(src).forEach(k=>{ L[k]=(L[k]||0)+r.net[k]*lr; H[k]=(H[k]||0)+r.net[k]*hr; X[k]=(X[k]||0)+r.tax[k]+r.net[k]*cr; });
+    SL+=r.short*lr; SH+=r.short*(1-lr); });
+  const links=[], used=new Set();
+  const add=(s,t,v)=>{ if(v>500){ links.push({source:s,target:t,value:Math.round(v)}); used.add(s); used.add(t);} };
+  add('Traditional','Roth',sim.convTotal);
+  Object.keys(src).forEach(k=>{ add(src[k],'Living expenses',L[k]); add(src[k],'Healthcare',H[k]); add(src[k],'Taxes and penalties',X[k]); });
+  add('Brokerage','Left at plan age',sim.end.brk); add('Traditional','Left at plan age',sim.end.trad); add('Roth','Left at plan age',sim.end.roth); add('Cash','Left at plan age',sim.end.cash);
+  add('Unfunded','Living expenses',SL); add('Unfunded','Healthcare',SH);
+  const nodeColor={'Living expenses':'--accent','Healthcare':'--c-hc','Taxes and penalties':'--c-tax','Left at plan age':'--muted','Unfunded':'--c-short'};
+  Object.keys(src).forEach(k=>nodeColor[src[k]]=col[k]);
+  const data=[...used].map(n=>({name:n,itemStyle:{color:css(nodeColor[n]||'--muted')}}));
+  chart('chSankey').setOption({textStyle:baseText(), tooltip:{trigger:'item',backgroundColor:css('--surface'),borderColor:css('--line'),textStyle:{color:css('--ink'),fontSize:12},
+      formatter:d=> d.dataType==='edge' ? `${d.data.source} → ${d.data.target}<br>${money(d.data.value)}` : `${d.name}<br>${money(d.value)}`},
+    series:[{type:'sankey',left:8,right:150,top:8,bottom:8,nodeWidth:12,nodeGap:12,draggable:false,data,links,
+      lineStyle:{color:'source',opacity:.35,curveness:.5},emphasis:{focus:'adjacency'},
+      label:{color:css('--ink'),fontSize:12,formatter:d=>`${d.name}  ${short$(d.value)}`}}]},true);
+}
+
+function renderSens(safe){
+  const pts=[], lo=Math.max(2000,Math.round(P.monthly*0.5/500)*500), hi=Math.round(P.monthly*1.5/500)*500;
+  for(let m=lo;m<=hi;m+=Math.max(250,Math.round((hi-lo)/24/250)*250)){ const s=simulate(P,m); pts.push([m, s.dep? +s.dep.x1.toFixed(1) : +(P.a1+(P.plan-Math.min(P.a1,P.a2))).toFixed(1)]); }
+  const cur=simulate(P), curAge = cur.dep? cur.dep.x1 : cur.endX1;
+  chart('chSens').setOption({textStyle:baseText(), grid:{left:48,right:20,top:16,bottom:40},
+    tooltip:{trigger:'axis',backgroundColor:css('--surface'),borderColor:css('--line'),textStyle:{color:css('--ink'),fontSize:12},formatter:a=>`${money(a[0].value[0])}/mo → age ${age(a[0].value[1])}`},
+    xAxis:{type:'value',min:lo,max:hi,name:'Monthly spending',nameLocation:'middle',nameGap:26,nameTextStyle:{color:css('--muted')},...axisCommon(),axisLabel:{color:css('--muted'),fontSize:11,formatter:short$}},
+    yAxis:{type:'value',min:v=>Math.floor(v.min/5)*5,max:v=>Math.ceil(v.max/5)*5,...axisCommon()},
+    series:[{type:'line',data:pts,symbol:'none',color:css('--accent'),lineStyle:{width:2},areaStyle:{opacity:.08},
+      markPoint:{symbol:'circle',symbolSize:10,itemStyle:{color:css('--accent')},label:{show:true,position:'top',color:css('--ink'),fontSize:11,formatter:()=>`Today's plan: ${age(curAge)}`},data:[{coord:[P.monthly,+curAge.toFixed(1)]}]},
+      markLine:{symbol:'none',silent:true,lineStyle:{color:css('--good'),type:'dashed'},label:{color:css('--good'),fontSize:10,formatter:'Lasts to plan age'},data:[{xAxis:safe}]}}]},true);
+}
+
+let csv='';
+function renderTable(ys){
+  const head=['Age S1/S2','Living','Healthcare','Roth conversion','Conversion tax','Pay','Social Sec.','Pension','From cash','From brokerage','From traditional','From Roth','Tax + penalty','Shortfall','Brokerage','Traditional','Roth','Cash'];
+  const rows=ys.map(y=>[`${y.a1} / ${y.a2}`,y.living,y.hc,y.conv||0,y.convTax||0,y.pay,y.ss,y.pen,y.cash,y.brk,y.trad,y.roth,y.tax,y.short,y.bal.brk,y.bal.trad,y.bal.roth,y.bal.cash]);
+  $('tbl').innerHTML = `<thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr class="${ys[i].short>0?'short':ys[i].penalty?'pen':''}">${r.map((c,j)=>`<td>${j===0?c:short$(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  csv = [head.join(','), ...rows.map(r=>r.map((c,j)=>j===0?`"${c}"`:Math.round(c)).join(','))].join('\n');
+}
+$('copyCsv').addEventListener('click',()=>{
+  const box=$('csvBox');
+  navigator.clipboard?.writeText(csv).then(()=>{ $('copyMsg').textContent='Copied.'; box.hidden=true; })
+    .catch(()=>{ box.value=csv; box.hidden=false; box.select(); $('copyMsg').textContent='Copy blocked here; the CSV is selected below.'; });
+  if(!navigator.clipboard){ box.value=csv; box.hidden=false; box.select(); $('copyMsg').textContent='The CSV is selected below; copy it.'; }
+});
+
+// ---------- Export ----------
+const LABELS=[['a1','Spouse 1 age','n'],['a2','Spouse 2 age','n'],['retAge','Spouse 1 retires at','n'],['retAge2','Spouse 2 retires at','n'],
+ ['pay1','Take-home pay until retiring, Spouse 1 (monthly)','$'],['pay2','Take-home pay until retiring, Spouse 2 (monthly)','$'],
+ ['monthly','Monthly expenses, excl. pre-65 healthcare','$'],['hc','Pre-65 healthcare, per person per month','$'],
+ ['brk','Brokerage','$'],['trad','Traditional 401k / IRA','$'],['roth','Roth','$'],['cash','Cash','$'],
+ ['ss1','Social Security, Spouse 1 (monthly)','$'],['ss1Age','Social Security start age, Spouse 1','n'],['ss2','Social Security, Spouse 2 (monthly)','$'],['ss2Age','Social Security start age, Spouse 2','n'],
+ ['convOn','Roth conversions','b'],['convTarget','Target Roth balance','$'],['convStart','Start conversions at Spouse 1 age','n'],['convBy','Reach target by Spouse 1 age','a'],
+ ['convOther','Taxable wages while a spouse still works (yearly)','$'],['stateTax','State tax on conversions','%'],
+ ['ret','Return after inflation','%'],['infl','Inflation','%'],['tEff','Tax on traditional withdrawals','%'],['tGain','Tax on brokerage gains','%'],
+ ['basis','Brokerage cost basis','%'],['rothBasis','Roth contributions','$'],['pen','Pension (monthly)','$'],['penAge','Pension start age','n'],
+ ['plan','Plan to age (younger spouse)','n'],['rule55','Rule of 55','b']];
+const fmtIn=(k,t)=>{ const v=P[k]; return t==='$'?money(v): t==='%'?v+'%': t==='b'?(v?'Yes':'No'): t==='a'?age(v): String(v); };
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function exportState(msg){ $('exportMsg').textContent=msg||''; }
+function chartImg(id, title, note){
+  const c=charts[id]; if(!c || $(id).closest('[hidden]')) return '';
+  let src=''; try{ src=c.getDataURL({type:'svg', backgroundColor: css('--surface')}); }catch(e){ return ''; }
+  return `<section><h2>${title}</h2>${note?`<p class="note">${note}</p>`:''}<div class="fig" style="background:${css('--surface')}"><img alt="${esc(title)}" src="${src}"></div></section>`;
+}
+function buildReport(){
+  const today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const kpis=document.querySelector('main > .kpis').outerHTML;
+  const flags=$('flags').outerHTML;
+  const inputs=`<table class="inputs"><tbody>${LABELS.map(([k,l,t])=>`<tr><td>${l}</td><td>${esc(fmtIn(k,t))}</td></tr>`).join('')}</tbody></table>`;
+  const convOn=P.convOn && !$('convBody').hidden;
+  const conv = P.convOn ? `<section><h2>Roth conversion plan</h2><p class="note">${esc($('convNote').textContent)}</p>${convOn?`${$('convBody').querySelector('.kpis').outerHTML}
+     ${chartImg('chConv','Each year’s conversion, by federal tax bracket','')}
+     <h3>With and without conversions</h3>${$('convCompare').outerHTML}<h3>Tax implications</h3>${$('convImpl').outerHTML}`:''}</section>` : '';
+  const vars=['--bg','--surface','--ink','--muted','--line','--field','--accent','--good','--warn','--bad'].map(v=>`${v}:${css(v)}`).join(';');
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retirement Runway report, ${today}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700&family=Public+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+:root{${vars}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Public Sans","Segoe UI",Arial,sans-serif}
+.page{max-width:960px;margin:0 auto;padding:32px 20px 56px}
+h1{font:700 1.9rem "Schibsted Grotesk",Arial,sans-serif;margin:0}
+h2{font:600 1.15rem "Schibsted Grotesk",Arial,sans-serif;margin:28px 0 6px}
+h3{font:600 .95rem "Schibsted Grotesk",Arial,sans-serif;margin:16px 0 6px}
+.meta,.note{color:var(--muted);font-size:.85rem;margin:2px 0 10px}
+section{break-inside:avoid}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.kpi .lbl,.kpi .sub{font-size:.78rem;color:var(--muted)}
+.kpi .val{font:700 1.35rem "Schibsted Grotesk",Arial,sans-serif}
+.pill{align-self:flex-start;font-size:.7rem;font-weight:600;border-radius:999px;padding:1px 8px}
+.pill.good{color:var(--good);border:1px solid var(--good)} .pill.warn{color:var(--warn);border:1px solid var(--warn)} .pill.bad{color:var(--bad);border:1px solid var(--bad)}
+[hidden]{display:none!important}
+.flags{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.flags li{padding:7px 11px;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;background:var(--surface);font-size:.86rem}
+.flags li.bad{border-left-color:var(--bad)} .flags li.good{border-left-color:var(--good)}
+table{border-collapse:collapse;width:100%;font-size:.8rem}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:600} td:first-child,th:first-child{text-align:left}
+table.inputs td{white-space:normal} table.inputs td:last-child{font-family:"IBM Plex Mono",monospace}
+#tbl,#tbl td{font-family:"IBM Plex Mono",monospace;font-size:.72rem}
+td.better{color:var(--good);font-weight:600}
+tr.short td{color:var(--bad)} tr.pen td{color:var(--warn)}
+.wide{overflow-x:auto}
+.fig{border:1px solid var(--line);border-radius:10px;padding:8px} .fig img{width:100%;height:auto;display:block}
+.tl-row{display:grid;grid-template-columns:130px 1fr;gap:10px;align-items:center;margin-bottom:8px}
+.tl-row .name{font-size:.8rem;color:var(--muted)}
+.tl-track{position:relative;height:24px;background:var(--field);border-radius:6px;overflow:hidden} .tl-track.thin{height:12px}
+.seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;padding-left:6px;font-size:.72rem;font-weight:600;white-space:nowrap;overflow:hidden}
+.tl-axis{position:relative;height:18px;margin-left:140px;font:.7rem "IBM Plex Mono",monospace;color:var(--muted)} .tl-axis span{position:absolute;transform:translateX(-50%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:var(--muted)} .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+footer{margin-top:28px;color:var(--muted);font-size:.78rem}
+@media print{body{background:#fff}.page{padding:0}h2{break-after:avoid}}
+</style></head><body><div class="page">
+<h1>Retirement Runway</h1>
+<p class="meta">Report generated ${today}. All figures in today's dollars. A planning estimate, not financial advice.</p>
+<section><h2>Headline results</h2>${kpis}</section>
+<section><h2>Notes</h2>${flags}</section>
+<section><h2>Inputs</h2>${inputs}</section>
+<section><h2>Runway timeline</h2><p class="note">By Spouse 1's age.</p>${$('timeline').innerHTML}</section>
+${conv}
+${chartImg('chBalances','Balances by bucket','End-of-year balances, stacked, by Spouse 1’s age.')}
+${chartImg('chFlow','Money in by year','Where each year’s money comes from, against the total cost.')}
+${chartImg('chSankey','Where the money goes','Lifetime totals from each source.')}
+${chartImg('chSens','What if spending changes?','Age money runs out (Spouse 1) at different monthly spending.')}
+<section><h2>Year-by-year table</h2><div class="wide">${$('tbl').outerHTML}</div></section>
+<footer>${document.querySelector('main > footer').innerHTML}</footer>
+</div></body></html>`;
+}
+function saveFile(filename, data){
+  const type = filename.endsWith('.csv') ? 'text/csv' : 'text/html';
+  const url = URL.createObjectURL(new Blob([data], {type: type + ';charset=utf-8'}));
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  exportState('Downloaded ' + filename + '.');
+}
+$('copyLink').addEventListener('click',()=>{ const link=scenarioLink();
+  (navigator.clipboard?.writeText(link) ?? Promise.reject()).then(()=>exportState('Link copied. Anyone who opens it sees these numbers.'))
+   .catch(()=>{ history.replaceState(null,'',link); exportState('Copy the address bar to share these numbers.'); }); });
+window.addEventListener('hashchange',()=>{ if(readHash()){ fillForm(); render(); } });
+const stamp=()=>new Date().toISOString().slice(0,10);
+$('dlReport').addEventListener('click',()=>{ clearTimeout(timer); render(); saveFile(`retirement-runway-report-${stamp()}.html`, buildReport()); });
+$('dlCsv').addEventListener('click',()=>{ clearTimeout(timer); render(); saveFile(`retirement-runway-${stamp()}.csv`, csv); });
+
+let timer;
+const schedule=()=>{ clearTimeout(timer); timer=setTimeout(render,120); };
+document.querySelector('aside').addEventListener('input', e=>{
+  if(e.target.id==='monthlyRange') $('monthly').value=e.target.value;
+  if(e.target.id==='monthly') $('monthlyRange').value=e.target.value;
+  schedule();
+});
+$('resetBtn').addEventListener('click',()=>{ P={...EXAMPLE}; fillForm(); render(); });
+window.addEventListener('resize',()=>Object.values(charts).forEach(c=>c.resize()));
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render); }catch(e){}
+new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+fillForm();
+if(window.echarts) render(); else window.addEventListener('load',render);
+</script>
+
+</body>
+</html>

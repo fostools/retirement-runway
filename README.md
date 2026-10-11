@@ -23,6 +23,10 @@ It's one static file. Open `index.html` in a browser, or serve the folder with a
 
 Repo **Settings → Pages → Build and deployment → Source: Deploy from a branch → `main` / `/ (root)`**. The site appears at `https://fostools.github.io/retirement-runway/`.
 
+## Spec
+
+The full product spec — inputs, outputs, calculation logic, a worked example and v1 scope — is in [docs/SPEC.md](docs/SPEC.md).
+
 ## How it calculates
 
 Half-year steps in today's dollars. Each step: take-home pay and income offset spending; the rest comes from cash, then brokerage, then Roth contributions before 59½ (traditional and Roth earnings with a 10% penalty if needed), then traditional and Roth after 59½. Withdrawals are grossed up with flat tax rates; Roth conversions use the 2026 married-filing-jointly brackets and standard deduction. Charts use [ECharts](https://echarts.apache.org/).

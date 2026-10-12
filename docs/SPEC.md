@@ -56,7 +56,7 @@ A first-time visitor answers eight short questions, one screen each, then lands 
 
 | Step | Asks | Notes |
 | --- | --- | --- |
-| Welcome | — | What it asks, about two minutes, nothing leaves the browser; Skip shows the example |
+| Welcome | — | What it asks, about two minutes, and the privacy note "No data is saved or sent anywhere. Your numbers stay in this browser only."; Skip shows the example |
 | Ages | Your age, spouse's age | 30 to 85 |
 | Retirement | Age each of you stops working | "Already retired? Enter your current age"; can't be before current age |
 | Take-home pay | Monthly pay for whoever still works | Shown only if someone is still working, only for that person |
@@ -70,6 +70,7 @@ A first-time visitor answers eight short questions, one screen each, then lands 
 
 - Shown on first visit only. Skipped for returning visitors with saved inputs and for scenario links; adding `#setup` to the page address forces it.
 - From the savings step on, an "early read" shows roughly when money runs out (without conversions), updating as you type.
+- The same privacy note appears under the page description on the calculator.
 - Each step validates before moving on and says what to fix; Enter continues, Escape closes.
 - Answers it doesn't ask about (return, inflation, tax rates, cost basis, pension, plan-to age) use the calculator's defaults.
 - After setup, a **Run setup again** button reopens it prefilled with the current inputs, starting at the ages step.

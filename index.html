@@ -832,8 +832,9 @@ if(window.echarts) render(); else window.addEventListener('load',render);
   const STEPS=[
     { id:'welcome', eyebrow:'Retirement Runway', nav:'Get started',
       html:()=>`<div class="ob-welcome ob-body"><h2 id="obTitle">How long will your money last?</h2>
-        <p class="lead">Answer a few questions about the two of you. About two minutes, and nothing leaves this browser.</p>
-        <ul><li>Your ages and when you each plan to stop working</li><li>What you spend each month</li><li>Three account balances</li></ul></div>` },
+        <p class="lead">Answer a few questions about the two of you. It takes about two minutes.</p>
+        <ul><li>Your ages and when you each plan to stop working</li><li>What you spend each month</li><li>Three account balances</li></ul>
+        <p class="privacy"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/></svg><span><strong>No data is saved or sent anywhere.</strong> Your numbers stay in this browser only.</span></p></div>` },
     { id:'ages', eyebrow:'About you', title:'First, how old are you both?', lead:'We plan for a couple. Results are shown by your age.',
       html:()=>`<div class="ob-grid">${F('a1','Your age',{ph:'52',suf:'yrs'})}${F('a2','Your spouse’s age',{ph:'50',suf:'yrs'})}</div>`,
       check:()=>{ for(const k of ['a1','a2']){ const v=A[k]; if(v==null) return [k,'Enter both ages.']; if(v<30||v>85) return [k,'Ages between 30 and 85 work best here.']; } } },

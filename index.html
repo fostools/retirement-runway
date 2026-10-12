@@ -114,11 +114,73 @@ textarea{width:100%;height:120px;font-family:var(--f-mono);font-size:.75rem;back
 footer{color:var(--muted);font-size:.8rem;margin-top:8px;max-width:80ch;display:flex;flex-direction:column;gap:8px}
 footer p{margin:0}
 footer .disclaimer{color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+/* ---------- Onboarding wizard ---------- */
+.ob{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 20px);
+  background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:blur(10px) saturate(.8);-webkit-backdrop-filter:blur(10px) saturate(.8);overflow-y:auto}
+.ob[hidden]{display:none!important}
+.ob-card{width:100%;max-width:580px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 64px -24px color-mix(in srgb,var(--ink) 35%,transparent);
+  padding:26px 28px 22px;display:flex;flex-direction:column;gap:18px}
+@media (max-width:520px){.ob-card{padding:20px 18px 18px;border-radius:14px}}
+.ob-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ob-steps{display:flex;gap:5px;flex:1}
+.ob-steps i{height:4px;flex:1;border-radius:2px;background:var(--line);transition:background .25s}
+.ob-steps i.done{background:var(--accent)}
+.ob-steps i.now{background:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.ob-skip{background:none;color:var(--muted);padding:4px 6px;font-weight:500}
+.ob-eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.ob h2{font-family:var(--f-display);font-weight:700;font-size:1.55rem;line-height:1.2;margin:4px 0 0;text-wrap:balance}
+.ob .lead{color:var(--muted);margin:6px 0 0;max-width:52ch}
+.ob-body{display:flex;flex-direction:column;gap:14px}
+.ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+@media (max-width:440px){.ob-grid{grid-template-columns:1fr}}
+.ob-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ob-field>span{font-size:.86rem;font-weight:600;color:var(--ink)}
+.ob-field small{font-size:.78rem;color:var(--muted)}
+.ob-in{display:flex;align-items:center;background:var(--field);border:1px solid var(--line);border-radius:9px;padding:0 11px;transition:border-color .15s}
+.ob-in:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ob-in.bad{border-color:var(--bad)}
+.ob-in b{color:var(--muted);font-weight:500;font-family:var(--f-mono);font-size:.95rem}
+.ob-in input{flex:1;min-width:0;border:0;background:transparent;font:500 1.05rem var(--f-mono);color:var(--ink);padding:10px 4px;outline:none;font-variant-numeric:tabular-nums}
+.ob-in input::placeholder{color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.ob-err{color:var(--bad);font-size:.82rem;min-height:1.1em;margin:0}
+.ob-choice{display:flex;gap:10px;flex-wrap:wrap}
+.ob-choice button{flex:1;min-width:140px;text-align:left;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-weight:600}
+.ob-choice button small{display:block;font-weight:400;color:var(--muted);margin-top:2px}
+.ob-choice button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.ob-teaser{display:flex;align-items:center;gap:10px;font-size:.88rem;background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:10px 12px}
+.ob-teaser[hidden]{display:none}
+.ob-teaser strong{font-family:var(--f-display);font-size:1.05rem}
+.ob-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:4px;border-top:1px solid var(--line);padding-top:16px}
+.ob-nav .grow{flex:1}
+.ob-nav button{padding:10px 18px;font-size:.92rem}
+.ob-back{background:none;color:var(--muted)}
+.ob-next{color:var(--surface);background:var(--accent)}
+.ob-review{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ob-review div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:.88rem}
+.ob-review div:last-child{border-bottom:0}
+.ob-review dt{color:var(--muted)} .ob-review dd{margin:0;font-family:var(--f-mono);text-align:right}
+.ob-review button{background:none;padding:2px 6px;font-size:.8rem}
+.ob-welcome ul{margin:0;padding-left:18px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.ob-pane{animation:obIn .28s ease both}
+@keyframes obIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.just-onboarded aside{animation:obGlow 2.4s ease 1}
+@keyframes obGlow{0%,60%{box-shadow:0 0 0 3px var(--accent-soft)}100%{box-shadow:none}}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 
+
+<div class="ob" id="ob" hidden role="dialog" aria-modal="true" aria-labelledby="obTitle">
+  <div class="ob-card">
+    <div class="ob-top"><div class="ob-steps" id="obSteps" aria-hidden="true"></div><button type="button" class="ob-skip" id="obSkip">Skip, show example</button></div>
+    <div id="obPane" class="ob-pane"></div>
+    <p class="ob-err" id="obErr" role="alert"></p>
+    <div class="ob-teaser" id="obTeaser" hidden></div>
+    <div class="ob-nav"><button type="button" class="ob-back" id="obBack">Back</button><span class="grow"></span><button type="button" class="ob-next" id="obNext">Continue</button></div>
+  </div>
+</div>
 <div class="wrap">
 <header>
   <div class="head-text">
@@ -126,6 +188,7 @@ footer .disclaimer{color:var(--ink);background:var(--surface);border:1px solid v
     <p>How long your savings last through the bridge years and retirement, for a couple. All figures in today's dollars.</p>
   </div>
   <div class="export" id="exportBar">
+    <button type="button" id="rerunSetup">Run setup again</button>
     <button type="button" id="dlReport" class="primary">Download report</button>
     <button type="button" id="dlCsv">Download CSV</button>
     <button type="button" id="copyLink">Copy scenario link</button>
@@ -280,7 +343,8 @@ function slices(base, amt){ return BAND_RATES.map((_,i)=>{ const lo=EDGES[i], hi
 const KEYS = Object.keys(EXAMPLE);
 const $ = id => document.getElementById(id);
 let P = {...EXAMPLE};
-try { const s = JSON.parse(localStorage.getItem('runway-inputs')||'null'); if (s) P = {...EXAMPLE, ...s}; } catch(e){}
+let HAD_SAVED=false;
+try { const s = JSON.parse(localStorage.getItem('runway-inputs')||'null'); if (s) { P = {...EXAMPLE, ...s}; HAD_SAVED=true; } } catch(e){}
 function readHash(){ try{ const h=location.hash.slice(1); if(!h) return false; const q=new URLSearchParams(h); let any=false;
   q.forEach((v,k)=>{ if(k in EXAMPLE){ any=true; P[k] = typeof EXAMPLE[k]==='boolean' ? v==='1' : parseFloat(v); } }); return any; }catch(e){ return false; } }
 readHash();
@@ -744,6 +808,152 @@ new MutationObserver(render).observe(document.documentElement,{attributes:true,a
 
 fillForm();
 if(window.echarts) render(); else window.addEventListener('load',render);
+
+// ---------- Onboarding wizard ----------
+(function(){
+  const ONB_KEY='runway-onb-done';
+  let A = {};            // answers collected so far
+  let idx = 0;
+  const ob=$('ob'), pane=$('obPane'), err=$('obErr'), teaser=$('obTeaser');
+  const num=v=>{ const n=parseFloat(String(v).replace(/[$,\s]/g,'')); return isNaN(n)?null:n; };
+  const stillWorks1=()=> A.retAge!=null && A.a1!=null && A.retAge>A.a1;
+  const stillWorks2=()=> A.retAge2!=null && A.a2!=null && A.retAge2>A.a2;
+  const anyWorking=()=> stillWorks1()||stillWorks2();
+
+  // field helper: key, label, prefix/suffix, hint, placeholder, min, max
+  const F=(k,label,o={})=>`<label class="ob-field"><span>${label}</span>
+    <div class="ob-in" data-wrap="${k}">${o.pre?`<b>${o.pre}</b>`:''}<input inputmode="${o.dec?'decimal':'numeric'}" data-k="${k}" autocomplete="off"
+      placeholder="${o.ph??''}" value="${A[k]!=null?(o.pre==='$'?Number(A[k]).toLocaleString('en-US'):A[k]):''}" data-money="${o.pre==='$'?1:''}" aria-label="${label}">${o.suf?`<b>${o.suf}</b>`:''}</div>
+    ${o.hint?`<small>${o.hint}</small>`:''}</label>`;
+
+  const STEPS=[
+    { id:'welcome', eyebrow:'Retirement Runway', nav:'Get started',
+      html:()=>`<div class="ob-welcome ob-body"><h2 id="obTitle">How long will your money last?</h2>
+        <p class="lead">Answer a few questions about the two of you. About two minutes, and nothing leaves this browser.</p>
+        <ul><li>Your ages and when you each plan to stop working</li><li>What you spend each month</li><li>Three account balances</li></ul></div>` },
+    { id:'ages', eyebrow:'About you', title:'First, how old are you both?', lead:'We plan for a couple. Results are shown by your age.',
+      html:()=>`<div class="ob-grid">${F('a1','Your age',{ph:'52',suf:'yrs'})}${F('a2','Your spouse’s age',{ph:'50',suf:'yrs'})}</div>`,
+      check:()=>{ for(const k of ['a1','a2']){ const v=A[k]; if(v==null) return [k,'Enter both ages.']; if(v<30||v>85) return [k,'Ages between 30 and 85 work best here.']; } } },
+    { id:'retire', eyebrow:'Work', title:'When do you each plan to stop working?', lead:'Already retired? Enter your current age.',
+      html:()=>`<div class="ob-grid">${F('retAge','You retire at',{ph:String(A.a1??52),suf:'yrs'})}${F('retAge2','Your spouse retires at',{ph:String(A.a2??50),suf:'yrs'})}</div>`,
+      check:()=>{ if(A.retAge==null) A.retAge=A.a1; if(A.retAge2==null) A.retAge2=A.a2;
+        if(A.retAge<A.a1) return ['retAge','That’s before your current age. Use your age if you’ve already retired.'];
+        if(A.retAge2<A.a2) return ['retAge2','That’s before your spouse’s current age.'];
+        if(A.retAge>80||A.retAge2>80) return ['retAge','Retirement ages up to 80 are supported.']; } },
+    { id:'pay', eyebrow:'Work', title:'What does the paycheck bring home until then?', lead:'Monthly take-home pay, after tax and 401k contributions. It covers spending until that person retires.',
+      skip:()=>!anyWorking(),
+      html:()=>`<div class="ob-grid">${stillWorks1()?F('pay1','Your take-home',{pre:'$',ph:'0',suf:'/mo',hint:`Until you’re ${A.retAge}`}):''}
+        ${stillWorks2()?F('pay2','Spouse’s take-home',{pre:'$',ph:'8,000',suf:'/mo',hint:`Until they’re ${A.retAge2}`}):''}</div>` },
+    { id:'spend', eyebrow:'Spending', title:'What do you spend in a typical month?', lead:'Everything except health insurance before 65. Today’s dollars, after tax.',
+      html:()=>`<div class="ob-grid">${F('monthly','Monthly spending',{pre:'$',ph:'20,000',suf:'/mo'})}
+        ${F('hc','Pre-65 health insurance, per person',{pre:'$',ph:'1,500',suf:'/mo',hint:'Starts once you’ve both stopped working, ends at 65'})}</div>`,
+      check:()=>{ if(A.monthly==null||A.monthly<=0) return ['monthly','Enter your monthly spending.']; if(A.hc==null) A.hc=1500; } },
+    { id:'savings', eyebrow:'Savings', title:'What have you saved, combined?', lead:'Rough balances are fine. Add up both of your accounts in each bucket.',
+      html:()=>`<div class="ob-grid">${F('brk','Brokerage (taxable)',{pre:'$',ph:'2,000,000'})}${F('trad','401k / traditional IRA',{pre:'$',ph:'2,500,000'})}
+        ${F('roth','Roth IRA / Roth 401k',{pre:'$',ph:'400,000'})}${F('cash','Cash and savings',{pre:'$',ph:'0',hint:'Optional'})}</div>`,
+      check:()=>{ for(const k of ['brk','trad','roth']) if(A[k]==null) A[k]=0; if(A.cash==null) A.cash=0;
+        if(A.brk+A.trad+A.roth+A.cash<=0) return ['brk','Enter at least one balance.']; } },
+    { id:'ss', eyebrow:'Income later', title:'Do you expect Social Security?', lead:'Your estimate is on your statement at ssa.gov. Leave blank to plan without it.',
+      html:()=>`<div class="ob-grid">${F('ss1','Your benefit',{pre:'$',ph:'0',suf:'/mo'})}${F('ss1Age','Starting at',{ph:'67',suf:'yrs'})}
+        ${F('ss2','Spouse’s benefit',{pre:'$',ph:'0',suf:'/mo'})}${F('ss2Age','Starting at',{ph:'67',suf:'yrs'})}</div>`,
+      check:()=>{ for(const k of ['ss1Age','ss2Age']){ if(A[k]==null) A[k]=67; if(A[k]<62||A[k]>70) return [k,'Social Security can start between 62 and 70.']; } } },
+    { id:'roth', eyebrow:'Taxes', title:'Want to plan Roth conversions?', lead:'Moving money from traditional to Roth in low-income years can cut lifetime taxes. We’ll work out the yearly amount.',
+      html:()=>{ const on=A.convOn!==false; const start=A.convStart??Math.max(A.retAge??A.a1,A.a1);
+        return `<div class="ob-choice" role="group" aria-label="Roth conversions">
+          <button type="button" data-conv="1" aria-pressed="${on}">Yes, plan them<small>Reach a Roth target by a set age</small></button>
+          <button type="button" data-conv="0" aria-pressed="${!on}">Not now<small>You can turn this on later</small></button></div>
+          ${on?`<div class="ob-grid">${F('convTarget','Roth target',{pre:'$',ph:'1,000,000'})}${F('convBy','Reach it by your age',{ph:String(Math.max(59.5,start+3)),suf:'yrs',dec:true})}
+          ${F('convStart','Start converting at your age',{ph:String(start),suf:'yrs'})}
+          ${anyWorking()?F('convOther','Taxable wages while one of you works',{pre:'$',ph:'130,000',suf:'/yr',hint:'Sets which tax bracket conversions land in'}):''}</div>`:''}`; },
+      check:()=>{ if(A.convOn===false) return; const start=Math.max(A.retAge??A.a1,A.a1);
+        if(A.convTarget==null) A.convTarget=1000000; if(A.convStart==null) A.convStart=start; if(A.convBy==null) A.convBy=Math.max(59.5,A.convStart+3);
+        if(A.convBy<=A.convStart) return ['convBy','The target age has to be after the start age.']; if(A.convOther==null) A.convOther=0; } },
+    { id:'review', eyebrow:'Check', title:'Does this look right?', nav:'See my runway',
+      html:()=>{ const row=(l,v,step)=>`<div><dt>${l}</dt><dd>${v}</dd><button type="button" data-go="${step}">Edit</button></div>`;
+        const $m=v=>money(v||0);
+        return `<dl class="ob-review">
+          ${row('Ages',`${A.a1} / ${A.a2}`,'ages')}
+          ${row('Retire at',`${A.retAge} / ${A.retAge2}`,'retire')}
+          ${anyWorking()?row('Take-home pay',`${$m(stillWorks1()?A.pay1:0)} / ${$m(stillWorks2()?A.pay2:0)} per mo`,'pay'):''}
+          ${row('Spending',`${$m(A.monthly)} per mo`,'spend')}
+          ${row('Pre-65 health, per person',`${$m(A.hc)} per mo`,'spend')}
+          ${row('Brokerage / Traditional / Roth',`${short$(A.brk)} / ${short$(A.trad)} / ${short$(A.roth)}`,'savings')}
+          ${A.cash?row('Cash',$m(A.cash),'savings'):''}
+          ${row('Social Security',(A.ss1||A.ss2)?`${$m(A.ss1)} at ${A.ss1Age} / ${$m(A.ss2)} at ${A.ss2Age}`:'Not included','ss')}
+          ${row('Roth conversions',A.convOn===false?'Off':`${short$(A.convTarget)} by ${age(A.convBy)}`,'roth')}
+        </dl><p class="lead">Return, inflation and tax assumptions use standard defaults. You can change them, and everything above, on the next page.</p>`; } },
+  ];
+
+  const visible=()=>STEPS.filter(s=>!s.skip||!s.skip());
+  function draw(){
+    const steps=visible(); idx=Math.max(0,Math.min(idx,steps.length-1)); const st=steps[idx];
+    $('obSteps').innerHTML=steps.slice(1).map((_,i)=>`<i class="${i+1<idx?'done':i+1===idx?'now':''}"></i>`).join('');
+    pane.className=''; void pane.offsetWidth; pane.className='ob-pane';
+    pane.innerHTML = st.id==='welcome' ? st.html() :
+      `<div class="ob-body"><div><div class="ob-eyebrow">${st.eyebrow} · ${idx} of ${steps.length-1}</div><h2 id="obTitle">${st.title}</h2>${st.lead?`<p class="lead">${st.lead}</p>`:''}</div>${st.html()}</div>`;
+    err.textContent='';
+    $('obBack').style.visibility = idx===0?'hidden':'visible';
+    $('obNext').textContent = st.nav || 'Continue';
+    $('obSkip').hidden = st.id==='review';
+    pane.querySelectorAll('input[data-k]').forEach(inp=>inp.addEventListener('input',()=>{ inp.closest('.ob-in').classList.remove('bad'); err.textContent=''; collect(); updateTeaser(); }));
+    pane.querySelectorAll('input[data-money="1"]').forEach(inp=>inp.addEventListener('blur',()=>{ const n=num(inp.value); if(n!=null) inp.value=n.toLocaleString('en-US'); }));
+    pane.querySelectorAll('[data-conv]').forEach(b=>b.addEventListener('click',()=>{ collect(); A.convOn = b.dataset.conv==='1'; draw(); }));
+    pane.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{ idx=visible().findIndex(s=>s.id===b.dataset.go); draw(); }));
+    updateTeaser();
+    const first=pane.querySelector('input[data-k]'); if(first) first.focus({preventScroll:true}); else $('obNext').focus({preventScroll:true});
+  }
+  function collect(){ pane.querySelectorAll('input[data-k]').forEach(inp=>{ A[inp.dataset.k]=num(inp.value); }); }
+
+  function buildP(){
+    const p={...EXAMPLE};
+    Object.assign(p,{ a1:A.a1, a2:A.a2, retAge:A.retAge??A.a1, retAge2:A.retAge2??A.a2,
+      pay1: stillWorks1()?(A.pay1||0):0, pay2: stillWorks2()?(A.pay2||0):0,
+      monthly:A.monthly??0, hc:A.hc??1500, brk:A.brk||0, trad:A.trad||0, roth:A.roth||0, cash:A.cash||0,
+      ss1:A.ss1||0, ss1Age:A.ss1Age??67, ss2:A.ss2||0, ss2Age:A.ss2Age??67,
+      convOn: A.convOn!==false, convTarget:A.convTarget??1000000,
+      convStart:A.convStart??Math.max(A.retAge??A.a1,A.a1), convBy:A.convBy??Math.max(59.5,(A.convStart??A.a1)+3),
+      convOther: anyWorking()?(A.convOther||0):0 });
+    return p;
+  }
+  function updateTeaser(){
+    const ready = A.a1!=null && A.a2!=null && A.monthly && (A.brk||A.trad||A.roth);
+    const st=visible()[idx]; if(!ready || st.id==='welcome'){ teaser.hidden=true; return; }
+    try{ const p=buildP(); p.convOn=false; const s=simulate(p);
+      teaser.innerHTML = s.dep ? `Early read: money lasts until you’re about <strong>${age(s.dep.x1)}</strong>`
+                               : `Early read: money lasts <strong>past ${age(s.endX1)}</strong>`;
+      teaser.hidden=false; }catch(e){ teaser.hidden=true; }
+  }
+  function next(){
+    collect(); const st=visible()[idx];
+    const bad = st.check && st.check();
+    if(bad){ const [k,msg]=bad; err.textContent=msg; const w=pane.querySelector(`[data-wrap="${k}"]`); if(w){ w.classList.add('bad'); w.querySelector('input').focus(); } return; }
+    if(st.id==='review'){ finish(); return; }
+    idx++; draw();
+  }
+  function finish(){
+    P = buildP(); fillForm(); render();
+    try{ localStorage.setItem(ONB_KEY,'1'); }catch(e){}
+    close(); document.body.classList.add('just-onboarded'); setTimeout(()=>document.body.classList.remove('just-onboarded'),2600);
+    window.scrollTo({top:0});
+  }
+  function open(fromCurrent){
+    A = {};
+    if(fromCurrent){ ['a1','a2','retAge','retAge2','pay1','pay2','monthly','hc','brk','trad','roth','cash','ss1','ss1Age','ss2','ss2Age','convTarget','convStart','convBy','convOther']
+      .forEach(k=>A[k]=P[k]); A.convOn=P.convOn; }
+    idx = fromCurrent ? 1 : 0; ob.hidden=false; document.body.style.overflow='hidden'; draw();
+  }
+  function close(){ ob.hidden=true; document.body.style.overflow=''; }
+
+  $('obNext').addEventListener('click',next);
+  $('obBack').addEventListener('click',()=>{ collect(); idx--; draw(); });
+  $('obSkip').addEventListener('click',()=>{ try{ localStorage.setItem(ONB_KEY,'1'); }catch(e){} close(); });
+  ob.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.tagName!=='BUTTON'){ e.preventDefault(); next(); } if(e.key==='Escape'){ close(); } });
+  $('rerunSetup').addEventListener('click',()=>open(true));
+
+  let done=false; try{ done = localStorage.getItem(ONB_KEY)==='1' || HAD_SAVED; }catch(e){}
+  if(typeof readHash==='function' && /=/.test(location.hash)) done=true; // opened from a scenario link
+  if(!done || location.hash==='#setup') open(false);
+})();
 </script>
 
 </body>

@@ -2,7 +2,7 @@
 
 A simple calculator that aims to take the fewest inputs and show a retirement runway.
 
-Enter a couple's ages, retirement ages, monthly spending, pre-65 healthcare cost and three balances (brokerage, traditional 401k/IRA, Roth). The page shows:
+A short guided setup asks a few questions, one at a time, then opens the full calculator; every input stays editable. It covers a couple's ages, retirement ages, monthly spending, pre-65 healthcare cost and three balances (brokerage, traditional 401k/IRA, Roth). The page shows:
 
 - **Bridge years** — whether brokerage and cash carry you to penalty-free access at 59½
 - **Retirement runway** — how long all buckets last, and the age money runs out

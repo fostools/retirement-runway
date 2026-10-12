@@ -1,6 +1,6 @@
 # Retirement Runway Calculator — Spec
 
-Last updated Oct 11, 2026 · Kiran
+Last updated Oct 12, 2026 · Kiran
 
 ## Goal and design principles
 
@@ -49,6 +49,30 @@ A couple needs about ten fields for a first answer; everything else has a defaul
 | Pension: monthly amount and start age | — | No | None |
 | Plan-to age (younger spouse) | 95 | No | 95 |
 | Rule of 55 (Spouse 1 leaves employer at 55+) | No | No | No |
+
+## Guided setup
+
+A first-time visitor answers eight short questions, one screen each, then lands on the full calculator with every input filled in and still editable.
+
+| Step | Asks | Notes |
+| --- | --- | --- |
+| Welcome | — | What it asks, about two minutes, nothing leaves the browser; Skip shows the example |
+| Ages | Your age, spouse's age | 30 to 85 |
+| Retirement | Age each of you stops working | "Already retired? Enter your current age"; can't be before current age |
+| Take-home pay | Monthly pay for whoever still works | Shown only if someone is still working, only for that person |
+| Spending | Monthly spending, pre-65 health insurance per person | Spending required; healthcare defaults to $1,500 |
+| Savings | Brokerage, 401k/traditional, Roth, cash | At least one balance; blanks count as $0 |
+| Social Security | Each benefit and start age | Optional; start age 62 to 70, default 67 |
+| Roth conversions | Yes / Not now; target, start age, target age, wages while working | Wages shown only if someone still works; target age must follow start age |
+| Review | Every answer with an Edit link | "See my runway" fills the calculator |
+
+**Behavior**
+
+- Shown on first visit only. Skipped for returning visitors with saved inputs and for scenario links; adding `#setup` to the page address forces it.
+- From the savings step on, an "early read" shows roughly when money runs out (without conversions), updating as you type.
+- Each step validates before moving on and says what to fix; Enter continues, Escape closes.
+- Answers it doesn't ask about (return, inflation, tax rates, cost basis, pension, plan-to age) use the calculator's defaults.
+- After setup, a **Run setup again** button reopens it prefilled with the current inputs, starting at the ages step.
 
 ## Outputs
 
@@ -177,3 +201,4 @@ V1 stays deliberately simple; these are the likely v2 additions once the core fe
 - [x] Add yearly Roth conversions after retirement to reach a $1M Roth target, with the yearly amount solved and the tax implications shown
 - [x] Export inputs and outputs as a report; add a disclaimer
 - [x] Publish as a static site on GitHub Pages
+- [x] Add a guided setup for first-time visitors, landing on the same editable calculator

@@ -163,7 +163,8 @@ footer .disclaimer{color:var(--ink);background:var(--surface);border:1px solid v
 .ob-review dt{color:var(--muted)} .ob-review dd{margin:0;font-family:var(--f-mono);text-align:right}
 .ob-review button{background:none;padding:2px 6px;font-size:.8rem}
 .ob-video{margin:2px 0 0;display:flex;flex-direction:column;gap:6px}
-.ob-video video{width:100%;aspect-ratio:8/5;max-width:100%;display:block;border-radius:10px;border:1px solid var(--line);background:var(--field)}
+.ob-video video{height:min(34vh,300px);width:auto;max-width:100%;aspect-ratio:8/5;object-fit:cover;display:block;margin:0 auto;border-radius:10px;border:1px solid var(--line);background:var(--field)}
+.ob-video figcaption{text-align:center}
 .ob-video figcaption{font-size:.8rem;color:var(--muted)}
 .ob-welcome ul{margin:0;padding-left:18px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
 .ob-pane{animation:obIn .28s ease both}
@@ -836,7 +837,7 @@ if(window.echarts) render(); else window.addEventListener('load',render);
     { id:'welcome', eyebrow:'Retirement Runway', nav:'Get started',
       html:()=>`<div class="ob-welcome ob-body"><h2 id="obTitle">How long will your money last?</h2>
         <p class="lead">Answer a few questions about the two of you. It takes about two minutes.</p>
-        <figure class="ob-video"><video controls playsinline muted preload="none" poster="media/demo-poster.jpg" aria-label="One-minute demo of Retirement Runway"><source src="media/demo.webm" type="video/webm"><source src="media/demo.mp4" type="video/mp4"></video><figcaption>See it in action: a one-minute demo</figcaption></figure>
+        <figure class="ob-video"><video controls playsinline muted preload="none" poster="media/demo-poster.jpg" aria-label="Short demo of Retirement Runway"><source src="media/demo.webm" type="video/webm"><source src="media/demo.mp4" type="video/mp4"></video><figcaption>See it in action: a short demo</figcaption></figure>
         <ul><li>Your ages and when you each plan to stop working</li><li>What you spend each month</li><li>Three account balances</li></ul>
         <p class="privacy"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/></svg><span><strong>No data is saved or sent anywhere.</strong> Your numbers stay in this browser only.</span></p></div>` },
     { id:'ages', eyebrow:'About you', title:'First, how old are you both?', lead:'We plan for a couple. Results are shown by your age.',

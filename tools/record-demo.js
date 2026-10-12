@@ -8,8 +8,9 @@
 //     -pix_fmt yuv420p -an -movflags +faststart media/demo.mp4
 //   ffmpeg -ss 3 -i media/demo.mp4 -frames:v 1 -q:v 4 media/demo-poster.jpg
 //
-// It opens index.html in headless Chromium at 1280x800, skips the guided setup,
-// plays a scripted walkthrough with on-screen captions, and records it.
+// It opens index.html in headless Chromium at 1280x800 as a first-time visitor,
+// walks through the guided setup with the example couple's numbers, then tours
+// the calculator with on-screen captions, and records it.
 // The chart library and fonts are served from node_modules so it works offline.
 
 const { chromium } = require('playwright');
@@ -42,19 +43,36 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   });
 
   const p = await ctx.newPage();
-  // Start from the example numbers and skip the guided setup.
-  await p.addInitScript(() => { try { localStorage.clear(); localStorage.setItem('runway-onb-done', '1'); } catch (e) {} });
+  // Arrive as a first-time visitor so the guided setup opens.
+  await p.addInitScript(() => { try { localStorage.clear(); } catch (e) {} });
   await p.goto('file://' + path.join(ROOT, 'index.html'));
   await p.evaluate(() => document.fonts.ready);
   await wait(2500);
 
-  await p.addStyleTag({ content: `#cap{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:rgba(21,33,43,.92);color:#fff;font:600 18px "Public Sans",sans-serif;padding:12px 22px;border-radius:10px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:90vw;text-align:center}` });
+  await p.addStyleTag({ content: `#cap{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:rgba(21,33,43,.92);color:#fff;font:600 18px "Public Sans",sans-serif;padding:12px 22px;border-radius:10px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:90vw;text-align:center;pointer-events:none}` });
   const cap = async (t, ms = 2600) => { await p.evaluate(t => { let c = document.getElementById('cap'); if (!c) { c = document.createElement('div'); c.id = 'cap'; document.body.appendChild(c); } c.textContent = t; }, t); await wait(ms); };
   const typeInto = async (sel, val) => { await p.click(sel, { clickCount: 3 }); await wait(250); await p.type(sel, String(val), { delay: 90 }); await wait(900); };
   const scrollTo = async (sel, block = 'start') => { await p.evaluate(([s, b]) => document.querySelector(s).scrollIntoView({ behavior: 'smooth', block: b }), [sel, block]); await wait(1400); };
 
-  await cap('Retirement Runway: how long does a couple’s money last?', 3200);
-  await cap('A few summary numbers in. Bridge years, runway and safe spending out.', 3200);
+  // --- Guided setup ---
+  const fill = async (k, v) => { const sel = `[data-k="${k}"]`; await p.click(sel); await p.type(sel, String(v), { delay: 55 }); await wait(250); };
+  const next = async (ms = 900) => { await p.click('#obNext'); await wait(ms); };
+  await cap('Retirement Runway: how long does a couple’s money last?', 3000);
+  await p.hover('.ob .privacy'); await cap('Nothing is saved or sent anywhere. It all runs in your browser.', 2800);
+  await next(); await cap('A short guided setup asks eight quick questions', 1800);
+  await fill('a1', 52); await fill('a2', 50); await next();
+  await fill('retAge', 52); await fill('retAge2', 55); await next();
+  await cap('Pay is asked only for whoever is still working', 1200); await fill('pay2', 8000); await next();
+  await fill('monthly', 20000); await fill('hc', 1500); await next();
+  await fill('brk', 2000000); await fill('trad', 2500000); await fill('roth', 400000);
+  await cap('An early read appears as soon as balances are in', 2400); await next();
+  await cap('Social Security is optional', 1400); await next();
+  await cap('Roth conversions: set a target and the age to reach it', 1400);
+  await fill('convTarget', 1000000); await fill('convStart', 52); await fill('convOther', 130000); await next();
+  await cap('Review every answer, edit any of them, then see the runway', 2600);
+  await next(1800);
+  // --- Calculator ---
+  await cap('Every input stays editable on the full page', 2600);
   await p.hover('#kBridge'); await cap('Bridge to 59½: covered by brokerage', 2400);
   await p.hover('#kLasts'); await cap('Money lasts until Spouse 1 is 84½', 2400);
   await cap('What if we spend $24K a month instead of $20K?', 1600);

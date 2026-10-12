@@ -13,7 +13,7 @@ A short guided setup asks a few questions, one at a time, then opens the full ca
 
 ## Privacy
 
-Everything runs in the browser. There is no server, account, analytics or cookie. Inputs are remembered in your browser's local storage; a scenario link puts your numbers in the URL fragment, which browsers do not send to the server.
+**No data is saved or sent anywhere.** Everything runs in the browser. There is no server, account, analytics or cookie. Inputs are remembered in your browser's local storage; a scenario link puts your numbers in the URL fragment, which browsers do not send to the server.
 
 ## Run it
 

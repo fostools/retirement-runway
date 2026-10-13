@@ -100,6 +100,11 @@ main{display:flex;flex-direction:column;gap:20px;min-width:0}
 /* table */
 details.tbl summary{cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:1.05rem}
 .tbl-tools{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
+.tbl-mode{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}
+.tbl-mode select{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:5px 8px}
+.tbl-help{max-width:90ch;margin:0 0 10px}
+th.grp{border-left:2px solid var(--line)} td.grp{border-left:2px solid var(--line)}
+td.tot,th.tot{font-weight:600;color:var(--ink)}
 .tbl-wrap{overflow-x:auto}
 table{border-collapse:collapse;font-family:var(--f-mono);font-size:.78rem;font-variant-numeric:tabular-nums;min-width:100%}
 th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -327,8 +332,9 @@ footer .disclaimer{color:var(--ink);background:var(--surface);border:1px solid v
   <section class="card">
     <details class="tbl">
       <summary>Year-by-year table</summary>
-      <div class="tbl-tools"><button type="button" id="copyCsv">Copy as CSV</button><span class="note" id="copyMsg"></span></div>
+      <div class="tbl-tools"><label class="tbl-mode">Show <select id="tblDollars"><option value="real">today’s dollars</option><option value="nominal">future dollars (with inflation)</option></select></label><button type="button" id="copyCsv">Copy as CSV</button><span class="note" id="copyMsg"></span></div>
       <textarea id="csvBox" hidden readonly aria-label="CSV text"></textarea>
+      <p class="note tbl-help" id="tblHelp"></p>
       <div class="tbl-wrap"><table id="tbl"></table></div>
     </details>
   </section>
@@ -400,7 +406,7 @@ function simulate(p, monthly){
       const cost = r.living + r.hc + r.convTax;
       const inc = payN+ssN+pnN, use = Math.min(inc,cost), f = inc>0? use/inc : 0;
       r.net.pay = payN*f; r.net.ss = ssN*f; r.net.pen = pnN*f; r.tax.ss = ssG-ssN; r.tax.pen = pnG-pnN;
-      if(inc>cost) brk += inc-cost;
+      r.saved = inc>cost ? inc-cost : 0; brk += r.saved;
       let need = cost - use, w;
       const take = (bal, gross) => Math.min(bal, gross);
       w=take(cash,need); cash-=w; r.w.cash+=w; r.net.cash+=w; need-=w;
@@ -451,15 +457,16 @@ function sustainable(p){
 }
 
 function yearly(sim, p){
-  const rows=new Map();
+  const rows=new Map(); let prevEnd=p.cash+p.brk+p.trad+p.roth;
   sim.per.forEach(r=>{
     const k=Math.floor(r.t+1e-9);
-    if(!rows.has(k)) rows.set(k,{a1:p.a1+k,a2:p.a2+k,living:0,hc:0,ss:0,pen:0,pay:0,cash:0,brk:0,trad:0,roth:0,tax:0,short:0,penalty:false,retired:false});
+    if(!rows.has(k)){ rows.set(k,{k,start:prevEnd,saved:0,a1:p.a1+k,a2:p.a2+k,living:0,hc:0,ss:0,pen:0,pay:0,cash:0,brk:0,trad:0,roth:0,tax:0,short:0,penalty:false,retired:false}); }
     const y=rows.get(k);
     y.living+=r.living; y.hc+=r.hc; y.ss+=r.ss; y.pen+=r.pen; y.pay+=r.pay; y.cash+=r.w.cash; y.brk+=r.w.brk; y.trad+=r.w.trad; y.roth+=r.w.roth;
     y.tax+=Object.values(r.tax).reduce((a,b)=>a+b,0)+r.convTax; y.short+=r.short;
     y.conv=(y.conv||0)+r.conv; y.convTax=(y.convTax||0)+r.convTax;
-    if(r.slices){ y.slices=y.slices||BAND_RATES.map(()=>0); r.slices.forEach((v,i)=>y.slices[i]+=v); } y.penalty=y.penalty||r.penalty; y.retired=y.retired||r.retired; y.bal=r.bal;
+    if(r.slices){ y.slices=y.slices||BAND_RATES.map(()=>0); r.slices.forEach((v,i)=>y.slices[i]+=v); } y.penalty=y.penalty||r.penalty; y.retired=y.retired||r.retired; y.bal=r.bal; y.saved+=r.saved||0;
+    y.end=r.bal.cash+r.bal.brk+r.bal.trad+r.bal.roth; prevEnd=y.end;
   });
   return [...rows.values()];
 }
@@ -686,12 +693,34 @@ function renderSens(safe){
 }
 
 let csv='';
+let lastYs=[];
 function renderTable(ys){
-  const head=['Age S1/S2','Living','Healthcare','Roth conversion','Conversion tax','Pay','Social Sec.','Pension','From cash','From brokerage','From traditional','From Roth','Tax + penalty','Shortfall','Brokerage','Traditional','Roth','Cash'];
-  const rows=ys.map(y=>[`${y.a1} / ${y.a2}`,y.living,y.hc,y.conv||0,y.convTax||0,y.pay,y.ss,y.pen,y.cash,y.brk,y.trad,y.roth,y.tax,y.short,y.bal.brk,y.bal.trad,y.bal.roth,y.bal.cash]);
-  $('tbl').innerHTML = `<thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr class="${ys[i].short>0?'short':ys[i].penalty?'pen':''}">${r.map((c,j)=>`<td>${j===0?c:short$(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;
-  csv = [head.join(','), ...rows.map(r=>r.map((c,j)=>j===0?`"${c}"`:Math.round(c)).join(','))].join('\n');
+  if(ys) lastYs=ys; ys=lastYs;
+  const nominal = $('tblDollars').value==='nominal', i=P.infl/100;
+  // Flows happen through the year (mid-year price level); balances are end of year.
+  const fF = y => nominal ? Math.pow(1+i, y.k+0.5) : 1, fS = y => nominal ? Math.pow(1+i, y.k) : 1, fE = y => nominal ? Math.pow(1+i, y.k+1) : 1;
+  const cols=[ // [header, value(y), group start?, total?]
+    ['Age S1/S2', y=>`${y.a1} / ${y.a2}`],
+    ['Start balance', y=>y.start*fS(y), 1, 1],
+    ['Pay', y=>y.pay*fF(y), 1], ['Social Sec.', y=>y.ss*fF(y)], ['Pension', y=>y.pen*fF(y)],
+    ['From cash', y=>y.cash*fF(y)], ['From brokerage', y=>y.brk*fF(y)], ['From traditional', y=>y.trad*fF(y)], ['From Roth', y=>y.roth*fF(y)], ['Shortfall', y=>y.short*fF(y)],
+    ['Living', y=>y.living*fF(y), 1], ['Healthcare', y=>y.hc*fF(y)], ['Tax + penalty', y=>y.tax*fF(y)], ['Saved from income', y=>y.saved*fF(y)],
+    ['Roth conversion', y=>(y.conv||0)*fF(y), 1], ['Conversion tax (in Tax)', y=>(y.convTax||0)*fF(y)],
+    ['Growth', y=>{ const W=y.cash+y.brk+y.trad+y.roth; return y.end*fE(y) - y.start*fS(y) + W*fF(y) - y.saved*fF(y); }, 1],
+    ['Brokerage', y=>y.bal.brk*fE(y), 1], ['Traditional', y=>y.bal.trad*fE(y)], ['Roth', y=>y.bal.roth*fE(y)], ['Cash', y=>y.bal.cash*fE(y)], ['End balance', y=>y.end*fE(y), 0, 1],
+  ];
+  $('tblHelp').textContent = (nominal
+      ? `Future dollars: today’s figures grown at ${P.infl}% inflation a year; growth then includes inflation. `
+      : `Today’s dollars: every year is in current purchasing power, so returns are after inflation (${P.ret}%). `)
+    + 'Each row adds up: Pay + Social Security + Pension + withdrawals + shortfall = Living + Healthcare + Tax + Saved from income. '
+    + 'Start balance + Growth + Saved from income − withdrawals = End balance (Roth conversions move money between buckets). '
+    + 'Withdrawals and growth happen twice a year, so growth is a little less than a full year’s return on the start balance.';
+  const rows=ys.map(y=>cols.map(c=>c[1](y)));
+  $('tbl').innerHTML = `<thead><tr>${cols.map(c=>`<th class="${c[2]?'grp':''} ${c[3]?'tot':''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${
+    rows.map((r,ri)=>`<tr class="${ys[ri].short>0?'short':ys[ri].penalty?'pen':''}">${r.map((v,j)=>`<td class="${cols[j][2]?'grp':''} ${cols[j][3]?'tot':''}">${j===0?v:short$(v)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  csv = [`# ${nominal?'Future dollars, '+P.infl+'% inflation':"Today's dollars"}`, cols.map(c=>c[0]).join(','), ...rows.map(r=>r.map((v,j)=>j===0?`"${v}"`:Math.round(v)).join(','))].join('\n');
 }
+$('tblDollars').addEventListener('change',()=>renderTable());
 $('copyCsv').addEventListener('click',()=>{
   const box=$('csvBox');
   navigator.clipboard?.writeText(csv).then(()=>{ $('copyMsg').textContent='Copied.'; box.hidden=true; })
@@ -781,7 +810,7 @@ ${chartImg('chBalances','Balances by bucket','End-of-year balances, stacked, by 
 ${chartImg('chFlow','Money in by year','Where each year’s money comes from, against the total cost.')}
 ${chartImg('chSankey','Where the money goes','Lifetime totals from each source.')}
 ${chartImg('chSens','What if spending changes?','Age money runs out (Spouse 1) at different monthly spending.')}
-<section><h2>Year-by-year table</h2><div class="wide">${$('tbl').outerHTML}</div></section>
+<section><h2>Year-by-year table</h2><p class="note">${esc($('tblHelp').textContent)}</p><div class="wide">${$('tbl').outerHTML}</div></section>
 <footer>${document.querySelector('main > footer').innerHTML}</footer>
 </div></body></html>`;
 }

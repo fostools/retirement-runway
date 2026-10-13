@@ -41,7 +41,7 @@ A couple needs about ten fields for a first answer; everything else has a defaul
 | Taxable wages while a spouse still works (yearly) | $130,000 | No | $0 |
 | State tax on conversions | 0% | No | 0% |
 | Expected return, after inflation | 4% | No | 4% real; 0% option for "no growth" |
-| Inflation | 2.5% | No | 2.5% (only for showing future dollars) |
+| Inflation | 2.5% | No | 2.5% (used for the table's future-dollars view; the model itself runs in today's dollars) |
 | Effective tax rate on traditional withdrawals | 20% | No | 20% |
 | Tax rate on brokerage gains | 15% | No | 15% federal long-term rate |
 | Brokerage cost basis (% of balance) | 50% | No | 50% |
@@ -104,7 +104,7 @@ The headline is three numbers: bridge runway, retirement runway, and the age the
 - **Sustainable spending:** the monthly amount that would last exactly to the plan-to age.
 - **Roth conversion plan:** the yearly conversion needed to hit the Roth target, total converted, tax on conversions and its effective rate, top federal bracket reached, and Roth balance at the target age.
 - **With vs without conversions:** money lasts to, sustainable spending, lifetime taxes, amount left after tax, brokerage cushion at 59½, bridge status.
-- **Year-by-year table:** both ages, spending, healthcare, Roth conversion and its tax, pay, Social Security, which bucket paid, tax paid, each bucket's ending balance; copyable or downloadable as CSV.
+- **Year-by-year table:** one row per year: start balance; money in (pay, Social Security, pension, withdrawals from each bucket, shortfall); money out (living, healthcare, tax and penalties, income saved); Roth conversion and its tax; investment growth; each bucket's end balance and the total. Every row adds up: money in = money out, and start balance + growth + saved − withdrawals = end balance, with each year's start equal to the previous year's end. A switch shows it in today's dollars (default) or future dollars, where flows are grown by inflation to mid-year and balances to year-end, and growth then includes inflation. A note above the table explains both identities. Copyable or downloadable as CSV, labeled with the dollar basis.
 - **Report export:** a Download report button saves one standalone HTML file with every input, the headline results and notes, the runway timeline, the Roth conversion plan (bracket chart, comparison, implications), all charts as images and the year-by-year table. It opens in any browser and prints to PDF.
 - **Scenario link:** Copy scenario link puts every changed input in the URL fragment so a scenario can be bookmarked or shared.
 - **Charts:** see Web page and charts.
@@ -162,7 +162,7 @@ A simple loop in half-year steps, in today's dollars: each step, net pay and inc
 5. Grow each remaining balance by the real return. Cash does not grow.
 6. Record each source's amount, tax and shortfall for the charts and table.
 
-**Runway = number of fully funded years in each phase.** Because returns and spending are both in today's dollars, inflation only matters when showing future-dollar figures.
+**Runway = number of fully funded years in each phase.** Because returns and spending are both in today's dollars, inflation only matters for the table's future-dollars view.
 
 **Sustainable spending** is found by searching for the monthly amount where the last bucket empties exactly at the plan-to age.
 
@@ -224,3 +224,4 @@ V1 stays deliberately simple; these are the likely v2 additions once the core fe
 - [x] Use a guided setup for first-time visitors, landing on the same editable calculator
 - [x] Show the generated demo video on the setup's welcome screen
 - [x] Say clearly that no data is saved or sent anywhere, on the welcome screen and the calculator
+- [x] Make the year-by-year table self-checking (start balance, growth, income saved) and add a today's / future dollars switch, after a user report that rows didn't add up
